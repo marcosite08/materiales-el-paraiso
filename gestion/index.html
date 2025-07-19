@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin - Materiales El Paraíso</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><text y='32' font-size='32'>🔧</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding-top: 30px;
+        }
+
+        .admin-panel {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #138496;
+        }
+
+        .brands-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .brands-table th,
+        .brands-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .brands-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .brands-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .export-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .calculator-link {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .calculator-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .calculator-link a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .admin-panel {
+                padding: 25px;
+                margin: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="admin-panel">
+            <div class="header">
+                <div class="logo">🔧 Panel de Administración</div>
+                <div class="subtitle">Materiales El Paraíso - Gestión de Marcas</div>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <!-- Sección: Agregar/Editar Marca -->
+            <div class="section">
+                <h3>📝 Agregar Nueva Marca</h3>
+                <form id="brandForm">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label for="brandName">Nombre de la Marca</label>
+                            <input type="text" id="brandName" placeholder="Ej: Truper" required>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="brandMargin">Margen (%)</label>
+                            <input type="number" id="brandMargin" placeholder="Ej: 40" min="0" max="100" required>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                                <span id="formButtonText">Agregar Marca</span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Sección: Lista de Marcas -->
+            <div class="section">
+                <h3>📋 Marcas Configuradas</h3>
+                <table class="brands-table">
+                    <thead>
+                        <tr>
+                            <th>Marca</th>
+                            <th>Margen Público</th>
+                            <th>Margen B2B</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="brandsTableBody">
+                        <!-- Datos dinámicos -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Sección: Exportar/Importar -->
+            <div class="section">
+                <h3>💾 Exportar/Importar Configuración</h3>
+                <div class="export-section">
+                    <div class="form-row">
+                        <button class="btn btn-success" onclick="exportData()">
+                            📤 Exportar Datos
+                        </button>
+                        <button class="btn btn-primary" onclick="document.getElementById('importFile').click()">
+                            📥 Importar Datos
+                        </button>
+                        <button class="btn btn-danger" onclick="resetData()">
+                            🔄 Restaurar Datos Originales
+                        </button>
+                    </div>
+                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+                </div>
+            </div>
+
+            <!-- Enlace a la calculadora -->
+            <div class="section">
+                <div class="calculator-link">
+                    <h3>🧮 Acceso a la Calculadora</h3>
+                    <p style="margin: 10px 0;">Comparte este enlace con tus vendedores:</p>
+                    <a href="/" target="_blank" id="calculatorLink">Abrir Calculadora de Precios</a>
+                    <br><br>
+                    <button class="btn btn-info" onclick="copyCalculatorLink()">
+                        📋 Copiar Enlace de Calculadora
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos por defecto
+        const defaultBrands = {
+            'truper': 40,
+            'vitroblocks': 30,
+            'pvc': 30,
+            'greda': 30,
+            'perdura': 50,
+            'royalty': 50
+        };
+
+        let currentEditingBrand = null;
+        let brands = {};
+
+        // Inicializar la aplicación
+        function initApp() {
+            loadBrands();
+            renderBrandsTable();
+            updateCalculatorLink();
+        }
+
+        // Actualizar enlace de calculadora
+        function updateCalculatorLink() {
+            const calculatorLink = document.getElementById('calculatorLink');
+            calculatorLink.href = window.location.origin + '/';
+            calculatorLink.textContent = window.location.origin + '/';
+        }
+
+        // Copiar enlace de calculadora
+        function copyCalculatorLink() {
+            const link = window.location.origin + '/';
+            navigator.clipboard.writeText(link).then(() => {
+                showAlert('Enlace copiado al portapapeles');
+            }).catch(() => {
+                showAlert('Error al copiar enlace', 'danger');
+            });
+        }
+
+        // Cargar marcas desde localStorage
+        function loadBrands() {
+            const saved = localStorage.getItem('calculatorBrands');
+            if (saved) {
+                brands = JSON.parse(saved);
+            } else {
+                brands = {...defaultBrands};
+                saveBrands();
+            }
+        }
+
+        // Guardar marcas en localStorage
+        function saveBrands() {
+            localStorage.setItem('calculatorBrands', JSON.stringify(brands));
+            localStorage.setItem('materialsBrands', JSON.stringify(brands));
+        }
+
+        // Renderizar tabla de marcas
+        function renderBrandsTable() {
+            const tbody = document.getElementById('brandsTableBody');
+            tbody.innerHTML = '';
+
+            const sortedBrands = Object.keys(brands).sort();
+            
+            for (const brandKey of sortedBrands) {
+                const margin = brands[brandKey];
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight: 600; text-transform: capitalize;">
+                        ${formatBrandName(brandKey)}
+                    </td>
+                    <td>${margin}%</td>
+                    <td>15%</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-primary btn-small" onclick="editBrand('${brandKey}')">
+                                ✏️ Editar
+                            </button>
+                            <button class="btn btn-danger btn-small" onclick="deleteBrand('${brandKey}')">
+                                🗑️ Eliminar
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+
+        // Formatear nombre de marca
+        function formatBrandName(brandKey) {
+            return brandKey.replace(/([A-Z])/g, ' $1')
+                          .replace(/^\w/, c => c.toUpperCase())
+                          .trim();
+        }
+
+        // Mostrar alerta
+        function showAlert(message, type = 'success') {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            container.innerHTML = '';
+            container.appendChild(alert);
+            
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 3000);
+        }
+
+        // Manejar formulario
+        document.getElementById('brandForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('brandName').value.trim();
+            const margin = parseInt(document.getElementById('brandMargin').value);
+            
+            if (!name || !margin) {
+                showAlert('Por favor complete todos los campos', 'danger');
+                return;
+            }
+
+            const brandKey = name.toLowerCase()
+                                .replace(/\s+/g, '')
+                                .replace(/[^a-z0-9]/g, '');
+            
+            if (currentEditingBrand) {
+                // Editando marca existente
+                if (currentEditingBrand !== brandKey && brands[brandKey]) {
+                    showAlert('Ya existe una marca con ese nombre', 'danger');
+                    return;
+                }
+                
+                if (currentEditingBrand !== brandKey) {
+                    delete brands[currentEditingBrand];
+                }
+                
+                brands[brandKey] = margin;
+                showAlert('Marca actualizada correctamente');
+                currentEditingBrand = null;
+                document.getElementById('formButtonText').textContent = 'Agregar Marca';
+            } else {
+                // Agregando nueva marca
+                if (brands[brandKey]) {
+                    showAlert('Ya existe una marca con ese nombre', 'danger');
+                    return;
+                }
+                
+                brands[brandKey] = margin;
+                showAlert('Marca agregada correctamente');
+            }
+            
+            saveBrands();
+            renderBrandsTable();
+            document.getElementById('brandForm').reset();
+        });
+
+        // Editar marca
+        function editBrand(brandKey) {
+            currentEditingBrand = brandKey;
+            document.getElementById('brandName').value = formatBrandName(brandKey);
+            document.getElementById('brandMargin').value = brands[brandKey];
+            document.getElementById('formButtonText').textContent = 'Actualizar Marca';
+            
+            showAlert('Editando marca: ' + formatBrandName(brandKey), 'success');
+        }
+
+        // Eliminar marca
+        function deleteBrand(brandKey) {
+            if (confirm(`¿Estás seguro de eliminar la marca "${formatBrandName(brandKey)}"?`)) {
+                delete brands[brandKey];
+                saveBrands();
+                renderBrandsTable();
+                showAlert('Marca eliminada correctamente');
+                
+                // Cancelar edición si se está editando esta marca
+                if (currentEditingBrand === brandKey) {
+                    currentEditingBrand = null;
+                    document.getElementById('formButtonText').textContent = 'Agregar Marca';
+                    document.getElementById('brandForm').reset();
+                }
+            }
+        }
+
+        // Exportar datos
+        function exportData() {
+            const dataStr = JSON.stringify(brands, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `materiales_marcas_backup_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+            showAlert('Datos exportados correctamente');
+        }
+
+        // Importar datos
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedBrands = JSON.parse(e.target.result);
+                    if (typeof importedBrands === 'object' && importedBrands !== null) {
+                        // Validar que todos los valores sean números
+                        const isValid = Object.values(importedBrands).every(value => 
+                            typeof value === 'number' && value >= 0 && value <= 100
+                        );
+                        
+                        if (isValid) {
+                            brands = importedBrands;
+                            saveBrands();
+                            renderBrandsTable();
+                            showAlert('Datos importados correctamente');
+                        } else {
+                            showAlert('El archivo contiene datos inválidos', 'danger');
+                        }
+                    } else {
+                        showAlert('Formato de archivo inválido', 'danger');
+                    }
+                } catch (error) {
+                    showAlert('Error al leer el archivo', 'danger');
+                }
+            };
+            reader.readAsText(file);
+            
+            // Limpiar input
+            event.target.value = '';
+        }
+
+        // Restaurar datos originales
+        function resetData() {
+            if (confirm('¿Estás seguro de restaurar los datos originales? Se perderán todos los cambios.')) {
+                brands = {...defaultBrands};
+                saveBrands();
+                renderBrandsTable();
+                showAlert('Datos restaurados a configuración original');
+                
+                // Cancelar cualquier edición
+                currentEditingBrand = null;
+                document.getElementById('formButtonText').textContent = 'Agregar Marca';
+                document.getElementById('brandForm').reset();
+            }
+        }
+
+        // Inicializar cuando cargue la página
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
