@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Precios - Materiales El Paraíso</title>
+    <meta name="description" content="Calculadora de precios para vendedores - Materiales El Paraíso">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><text y='32' font-size='32'>🏗️</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding-top: 50px;
+        }
+
+        .calculator {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+            -moz-appearance: textfield;
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .results {
+            display: none;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 25px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .result-item:last-child {
+            border-bottom: none;
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .result-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .public-price {
+            color: #28a745;
+        }
+
+        .b2b-price {
+            color: #007bff;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+
+        @media (max-width: 480px) {
+            .calculator {
+                padding: 25px;
+                margin: 10px;
+            }
+            
+            .logo {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="calculator">
+            <div class="header">
+                <div class="logo">🏗️ Materiales El Paraíso</div>
+                <div class="subtitle">Calculadora de Precios</div>
+            </div>
+
+            <form id="priceCalculator">
+                <div class="form-group">
+                    <label for="brand">Marca</label>
+                    <select id="brand" required>
+                        <option value="">Cargando marcas...</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="publicPrice">Precio Público ($)</label>
+                    <input 
+                        type="number" 
+                        id="publicPrice" 
+                        placeholder="Ingrese el precio público"
+                        min="0"
+                        required
+                    >
+                </div>
+            </form>
+
+            <div class="results" id="results">
+                <div class="result-item">
+                    <span class="result-label">Precio Público:</span>
+                    <span class="result-value public-price" id="displayPublicPrice">$0.00</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Precio B2B:</span>
+                    <span class="result-value b2b-price" id="b2bPrice">$0.00</span>
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Descuento B2B:</span>
+                    <span class="result-value" id="discount">$0.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración de márgenes por marca (se carga dinámicamente)
+        let brandMargins = {};
+        
+        // Cargar configuración desde el panel admin
+        function loadBrandConfiguration() {
+            const saved = localStorage.getItem('calculatorBrands');
+            if (saved) {
+                brandMargins = JSON.parse(saved);
+            } else {
+                // Configuración por defecto si no hay datos del admin
+                brandMargins = {
+                    'truper': 40,
+                    'vitroblocks': 30,
+                    'pvc': 30,
+                    'greda': 30,
+                    'perdura': 50,
+                    'royalty': 50
+                };
+                // Guardar configuración por defecto
+                localStorage.setItem('calculatorBrands', JSON.stringify(brandMargins));
+            }
+            updateBrandSelect();
+        }
+        
+        // Actualizar el select de marcas dinámicamente
+        function updateBrandSelect() {
+            const brandSelect = document.getElementById('brand');
+            const currentValue = brandSelect.value;
+            
+            // Limpiar opciones existentes
+            brandSelect.innerHTML = '<option value="">Seleccionar marca...</option>';
+            
+            // Agregar marcas desde la configuración
+            const sortedBrands = Object.keys(brandMargins).sort();
+            for (const brandKey of sortedBrands) {
+                const option = document.createElement('option');
+                option.value = brandKey;
+                option.textContent = formatBrandName(brandKey);
+                brandSelect.appendChild(option);
+            }
+            
+            // Restaurar selección si aún existe
+            if (currentValue && brandMargins[currentValue]) {
+                brandSelect.value = currentValue;
+            }
+        }
+        
+        // Formatear nombre de marca para mostrar
+        function formatBrandName(brandKey) {
+            return brandKey.replace(/([A-Z])/g, ' $1')
+                          .replace(/^\w/, c => c.toUpperCase())
+                          .trim();
+        }
+        
+        // Variables globales
+        const results = document.getElementById('results');
+        const brandSelect = document.getElementById('brand');
+        const publicPriceInput = document.getElementById('publicPrice');
+
+        // Calcular en tiempo real cuando cambie el precio o la marca
+        function updateCalculation() {
+            const brand = brandSelect.value;
+            const publicPrice = parseFloat(publicPriceInput.value);
+            
+            if (brand && publicPrice && publicPrice > 0) {
+                calculatePrices(brand, publicPrice);
+            } else {
+                results.style.display = 'none';
+            }
+        }
+
+        // Eventos para cálculo en tiempo real
+        brandSelect.addEventListener('change', updateCalculation);
+        publicPriceInput.addEventListener('input', updateCalculation);
+
+        function calculatePrices(brand, publicPrice) {
+            const publicMargin = brandMargins[brand];
+            
+            // Verificar que la marca existe en la configuración
+            if (!publicMargin && publicMargin !== 0) {
+                alert('Marca no encontrada en la configuración');
+                results.style.display = 'none';
+                return;
+            }
+            
+            const b2bMargin = 15; // Siempre 15% para B2B
+            
+            // Calcular el costo base desde el precio público
+            const cost = publicPrice / (1 + publicMargin / 100);
+            
+            // Calcular precio B2B
+            const b2bPrice = cost * (1 + b2bMargin / 100);
+            
+            // Calcular descuento
+            const discount = publicPrice - b2bPrice;
+            
+            // Mostrar resultados
+            document.getElementById('displayPublicPrice').textContent = `$${publicPrice.toFixed(2)}`;
+            document.getElementById('b2bPrice').textContent = `$${b2bPrice.toFixed(2)}`;
+            document.getElementById('discount').textContent = `$${discount.toFixed(2)}`;
+            
+            // Mostrar la sección de resultados
+            results.style.display = 'block';
+        }
+        
+        // Escuchar cambios en localStorage para actualizar automáticamente
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'calculatorBrands') {
+                loadBrandConfiguration();
+                updateCalculation(); // Recalcular si hay datos activos
+            }
+        });
+        
+        // También verificar cambios cada 3 segundos (para mismo tab)
+        setInterval(function() {
+            const current = JSON.stringify(brandMargins);
+            const saved = localStorage.getItem('calculatorBrands');
+            if (saved && current !== saved) {
+                loadBrandConfiguration();
+                updateCalculation();
+            }
+        }, 3000);
+        
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBrandConfiguration();
+        });
+    </script>
+</body>
+</html>
