@@ -1,0 +1,16 @@
+{
+  "name": "materiales-el-paraiso",
+  "version": "1.0.0",
+  "description": "Calculadora de precios para Materiales El Paraíso",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve -s . -l 8080",
+    "build": "echo 'No build needed for static site'"
+  },
+  "dependencies": {
+    "serve": "^14.2.1"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}
