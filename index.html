@@ -201,6 +201,28 @@
             text-align: center;
         }
 
+        .footer-link {
+            text-align: center;
+            margin-top: 25px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+
+        .footer-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .footer-link a:hover {
+            color: #5a67d8;
+            text-decoration: underline;
+        }
+
         @media (max-width: 480px) {
             .container {
                 padding-top: 20px;
@@ -300,6 +322,13 @@
                     <span class="result-label">Descuento B2B:</span>
                     <span class="result-value" id="discount">$0.00</span>
                 </div>
+            </div>
+
+            <!-- Enlace a productos excluidos -->
+            <div class="footer-link">
+                <a href="https://docs.google.com/spreadsheets/d/1u4aTu_FnycMmenh8gFzQ18Y3cAAA9bxYiEyaVEs2Bng/edit?usp=sharing" target="_blank">
+                    📋 Lista de productos excluidos
+                </a>
             </div>
         </div>
     </div>
