@@ -157,26 +157,37 @@
             background: #e0a800;
         }
 
-        .brands-table, .alerts-table {
+        .btn-purple {
+            background: linear-gradient(135deg, #9c27b0 0%, #673ab7 100%);
+            color: white;
+        }
+
+        .btn-purple:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(156, 39, 176, 0.3);
+        }
+
+        .brands-table, .alerts-table, .announcements-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
 
         .brands-table th, .brands-table td,
-        .alerts-table th, .alerts-table td {
+        .alerts-table th, .alerts-table td,
+        .announcements-table th, .announcements-table td {
             padding: 12px;
             text-align: left;
             border-bottom: 1px solid #e1e5e9;
         }
 
-        .brands-table th, .alerts-table th {
+        .brands-table th, .alerts-table th, .announcements-table th {
             background: #f8f9fa;
             font-weight: 600;
             color: #333;
         }
 
-        .brands-table tr:hover, .alerts-table tr:hover {
+        .brands-table tr:hover, .alerts-table tr:hover, .announcements-table tr:hover {
             background: #f8f9fa;
         }
 
@@ -244,6 +255,37 @@
             text-align: center;
         }
 
+        .announcement-preview {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 3px solid #5a67d8;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .announcement-type-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            color: #1976d2;
+        }
+
+        .status-active {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .status-inactive {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
         @media (max-width: 768px) {
             .form-row {
                 flex-direction: column;
@@ -265,10 +307,61 @@
         <div class="admin-panel">
             <div class="header">
                 <div class="logo">🔧 Panel de Administración</div>
-                <div class="subtitle">Materiales El Paraíso - Gestión de Marcas y Alertas</div>
+                <div class="subtitle">Materiales El Paraíso - Gestión Completa</div>
             </div>
 
             <div id="alertContainer"></div>
+
+            <!-- Nueva Sección: Anuncios Generales -->
+            <div class="section">
+                <h3>📢 Anuncios Generales</h3>
+                <div class="announcement-type-info">
+                    <strong>💡 Información:</strong> Los anuncios generales se muestran siempre en la calculadora, independientemente de la marca seleccionada. Úsalos para promociones, avisos importantes, cambios de política, etc.
+                </div>
+                
+                <form id="announcementForm">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label for="announcementTitle">Título del Anuncio</label>
+                            <input type="text" id="announcementTitle" placeholder="Ej: ¡Promoción especial esta semana!" required>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="announcementActive">Estado</label>
+                            <select id="announcementActive" required>
+                                <option value="true">Activo</option>
+                                <option value="false">Inactivo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 3;">
+                            <label for="announcementMessage">Mensaje del Anuncio</label>
+                            <textarea id="announcementMessage" placeholder="Ej: 15% de descuento adicional en todas las compras mayores a $5,000" required></textarea>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn btn-purple" style="width: 100%; height: 80px;">
+                                <span id="announcementFormButtonText">📢 Agregar Anuncio</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="announcementPreview"></div>
+                </form>
+
+                <table class="announcements-table">
+                    <thead>
+                        <tr>
+                            <th>Título</th>
+                            <th>Mensaje</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="announcementsTableBody">
+                        <!-- Anuncios dinámicos -->
+                    </tbody>
+                </table>
+            </div>
 
             <!-- Sección: Agregar/Editar Marca -->
             <div class="section">
@@ -311,11 +404,11 @@
                 </table>
             </div>
 
-            <!-- Nueva Sección: Gestión de Alertas -->
+            <!-- Sección: Gestión de Alertas -->
             <div class="section">
-                <h3>⚠️ Gestión de Alertas por Marca</h3>
+                <h3>⚠️ Alertas por Marca</h3>
                 <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
-                    Configura mensajes de alerta que aparecerán cuando los vendedores seleccionen ciertas marcas.
+                    Configura mensajes de alerta que aparecerán cuando los vendedores seleccionen ciertas marcas específicas.
                 </p>
                 
                 <form id="alertForm">
@@ -403,17 +496,23 @@
             'truper': '¡ATENCIÓN! No aplica para carretilla cód. 11740, usar marca "Alertas"'
         };
 
+        const defaultAnnouncements = [];
+
         let currentEditingBrand = null;
         let currentEditingAlert = null;
+        let currentEditingAnnouncement = null;
         let brands = {};
         let brandAlerts = {};
+        let generalAnnouncements = [];
 
         // Inicializar la aplicación
         function initApp() {
             loadBrands();
             loadAlerts();
+            loadAnnouncements();
             renderBrandsTable();
             renderAlertsTable();
+            renderAnnouncementsTable();
             updateCalculatorLink();
             updateAlertBrandSelect();
         }
@@ -457,6 +556,17 @@
             }
         }
 
+        // Cargar anuncios desde localStorage
+        function loadAnnouncements() {
+            const saved = localStorage.getItem('generalAnnouncements');
+            if (saved) {
+                generalAnnouncements = JSON.parse(saved);
+            } else {
+                generalAnnouncements = [...defaultAnnouncements];
+                saveAnnouncements();
+            }
+        }
+
         // Guardar marcas en localStorage
         function saveBrands() {
             localStorage.setItem('calculatorBrands', JSON.stringify(brands));
@@ -466,6 +576,11 @@
         // Guardar alertas en localStorage
         function saveAlerts() {
             localStorage.setItem('brandAlerts', JSON.stringify(brandAlerts));
+        }
+
+        // Guardar anuncios en localStorage
+        function saveAnnouncements() {
+            localStorage.setItem('generalAnnouncements', JSON.stringify(generalAnnouncements));
         }
 
         // Actualizar select de marcas para alertas
@@ -503,6 +618,27 @@
                 previewContainer.innerHTML = '';
             }
         });
+
+        // Vista previa de anuncio
+        document.getElementById('announcementMessage').addEventListener('input', updateAnnouncementPreview);
+        document.getElementById('announcementTitle').addEventListener('input', updateAnnouncementPreview);
+
+        function updateAnnouncementPreview() {
+            const title = document.getElementById('announcementTitle').value;
+            const message = document.getElementById('announcementMessage').value;
+            const previewContainer = document.getElementById('announcementPreview');
+            
+            if (title.trim() || message.trim()) {
+                previewContainer.innerHTML = `
+                    <div class="announcement-preview">
+                        📢 <strong>${title}</strong><br>
+                        ${message}
+                    </div>
+                `;
+            } else {
+                previewContainer.innerHTML = '';
+            }
+        }
 
         // Renderizar tabla de marcas
         function renderBrandsTable() {
@@ -567,6 +703,41 @@
             }
         }
 
+        // Renderizar tabla de anuncios
+        function renderAnnouncementsTable() {
+            const tbody = document.getElementById('announcementsTableBody');
+            tbody.innerHTML = '';
+            
+            for (let i = 0; i < generalAnnouncements.length; i++) {
+                const announcement = generalAnnouncements[i];
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight: 600;">
+                        ${announcement.title}
+                    </td>
+                    <td style="max-width: 300px; word-break: break-word;">
+                        ${announcement.message}
+                    </td>
+                    <td>
+                        <span class="${announcement.active ? 'status-active' : 'status-inactive'}">
+                            ${announcement.active ? '✅ Activo' : '❌ Inactivo'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-purple btn-small" onclick="editAnnouncement(${i})">
+                                ✏️ Editar
+                            </button>
+                            <button class="btn btn-danger btn-small" onclick="deleteAnnouncement(${i})">
+                                🗑️ Eliminar
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+
         // Formatear nombre de marca
         function formatBrandName(brandKey) {
             return brandKey.replace(/([A-Z])/g, ' $1')
@@ -612,7 +783,6 @@
                 
                 if (currentEditingBrand !== brandKey) {
                     delete brands[currentEditingBrand];
-                    // Actualizar alerta si existe
                     if (brandAlerts[currentEditingBrand]) {
                         brandAlerts[brandKey] = brandAlerts[currentEditingBrand];
                         delete brandAlerts[currentEditingBrand];
@@ -668,148 +838,38 @@
             document.getElementById('alertPreview').innerHTML = '';
         });
 
-        // Editar marca
-        function editBrand(brandKey) {
-            currentEditingBrand = brandKey;
-            document.getElementById('brandName').value = formatBrandName(brandKey);
-            document.getElementById('brandMargin').value = brands[brandKey];
-            document.getElementById('formButtonText').textContent = 'Actualizar Marca';
+        // Manejar formulario de anuncios
+        document.getElementById('announcementForm').addEventListener('submit', function(e) {
+            e.preventDefault();
             
-            showAlert('Editando marca: ' + formatBrandName(brandKey), 'success');
-        }
-
-        // Editar alerta
-        function editAlert(brandKey) {
-            currentEditingAlert = brandKey;
-            document.getElementById('alertBrand').value = brandKey;
-            document.getElementById('alertMessage').value = brandAlerts[brandKey];
-            document.getElementById('alertFormButtonText').textContent = 'Actualizar Alerta';
+            const title = document.getElementById('announcementTitle').value.trim();
+            const message = document.getElementById('announcementMessage').value.trim();
+            const active = document.getElementById('announcementActive').value === 'true';
             
-            // Mostrar preview
-            document.getElementById('alertPreview').innerHTML = `
-                <div class="alert-preview">
-                    ⚠️ ${brandAlerts[brandKey]} ⚠️
-                </div>
-            `;
-            
-            showAlert('Editando alerta para: ' + formatBrandName(brandKey), 'success');
-        }
-
-        // Eliminar marca
-        function deleteBrand(brandKey) {
-            if (confirm(`¿Estás seguro de eliminar la marca "${formatBrandName(brandKey)}"?`)) {
-                delete brands[brandKey];
-                // También eliminar alerta si existe
-                if (brandAlerts[brandKey]) {
-                    delete brandAlerts[brandKey];
-                }
-                
-                saveBrands();
-                saveAlerts();
-                renderBrandsTable();
-                renderAlertsTable();
-                updateAlertBrandSelect();
-                showAlert('Marca eliminada correctamente');
-                
-                if (currentEditingBrand === brandKey) {
-                    currentEditingBrand = null;
-                    document.getElementById('formButtonText').textContent = 'Agregar Marca';
-                    document.getElementById('brandForm').reset();
-                }
+            if (!title || !message) {
+                showAlert('Por favor complete todos los campos del anuncio', 'danger');
+                return;
             }
-        }
-
-        // Eliminar alerta
-        function deleteAlert(brandKey) {
-            if (confirm(`¿Estás seguro de eliminar la alerta para "${formatBrandName(brandKey)}"?`)) {
-                delete brandAlerts[brandKey];
-                saveAlerts();
-                renderAlertsTable();
-                showAlert('Alerta eliminada correctamente');
-                
-                if (currentEditingAlert === brandKey) {
-                    currentEditingAlert = null;
-                    document.getElementById('alertFormButtonText').textContent = 'Agregar Alerta';
-                    document.getElementById('alertForm').reset();
-                    document.getElementById('alertPreview').innerHTML = '';
-                }
+            
+            if (currentEditingAnnouncement !== null) {
+                generalAnnouncements[currentEditingAnnouncement] = {
+                    title: title,
+                    message: message,
+                    active: active,
+                    id: Date.now()
+                };
+                showAlert('Anuncio actualizado correctamente');
+                currentEditingAnnouncement = null;
+                document.getElementById('announcementFormButtonText').textContent = '📢 Agregar Anuncio';
+            } else {
+                generalAnnouncements.push({
+                    title: title,
+                    message: message,
+                    active: active,
+                    id: Date.now()
+                });
+                showAlert('Anuncio agregado correctamente');
             }
-        }
-
-        // Exportar datos
-        function exportData() {
-            const data = {
-                brands: brands,
-                alerts: brandAlerts
-            };
-            const dataStr = JSON.stringify(data, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
-            const url = URL.createObjectURL(dataBlob);
             
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `materiales_completo_backup_${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-            
-            URL.revokeObjectURL(url);
-            showAlert('Datos exportados correctamente');
-        }
-
-        // Importar datos
-        function importData(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const importedData = JSON.parse(e.target.result);
-                    
-                    if (importedData.brands && importedData.alerts) {
-                        brands = importedData.brands;
-                        brandAlerts = importedData.alerts;
-                        saveBrands();
-                        saveAlerts();
-                        renderBrandsTable();
-                        renderAlertsTable();
-                        updateAlertBrandSelect();
-                        showAlert('Datos importados correctamente');
-                    } else {
-                        showAlert('Formato de archivo inválido', 'danger');
-                    }
-                } catch (error) {
-                    showAlert('Error al leer el archivo', 'danger');
-                }
-            };
-            reader.readAsText(file);
-            
-            event.target.value = '';
-        }
-
-        // Restaurar datos originales
-        function resetData() {
-            if (confirm('¿Estás seguro de restaurar los datos originales? Se perderán todos los cambios.')) {
-                brands = {...defaultBrands};
-                brandAlerts = {...defaultAlerts};
-                saveBrands();
-                saveAlerts();
-                renderBrandsTable();
-                renderAlertsTable();
-                updateAlertBrandSelect();
-                showAlert('Datos restaurados a configuración original');
-                
-                currentEditingBrand = null;
-                currentEditingAlert = null;
-                document.getElementById('formButtonText').textContent = 'Agregar Marca';
-                document.getElementById('alertFormButtonText').textContent = 'Agregar Alerta';
-                document.getElementById('brandForm').reset();
-                document.getElementById('alertForm').reset();
-                document.getElementById('alertPreview').innerHTML = '';
-            }
-        }
-
-        // Inicializar cuando cargue la página
-        document.addEventListener('DOMContentLoaded', initApp);
-    </script>
-</body>
-</html>
+            saveAnnouncements();
+            renderAnnouncem
