@@ -608,6 +608,7 @@
         }
 
         // Guardar configuración en GitHub Gist
+        // Guardar configuración en GitHub Gist
         async function saveConfigurationToGist() {
             if (!configLoaded) {
                 showAlert('Configuración no cargada, no se puede guardar', 'danger');
@@ -625,25 +626,32 @@
                     announcements: generalAnnouncements
                 };
 
-                // Nota: En un entorno real, aquí usarías la GitHub API con un token
-                // Por simplicidad, esta versión requiere actualización manual del Gist
+                console.log('Sending configuration to Netlify Function:', config);
                 
-                console.log('Configuration to save:', config);
-                
-                // Simular guardado exitoso
-                setTimeout(() => {
-                    showAlert('¡Cambios guardados! IMPORTANTE: Actualiza manualmente el Gist en GitHub con la nueva configuración.', 'success');
-                    disableAllButtons(false);
-                    
-                    // Mostrar la configuración actual para copiar manualmente
-                    console.log('COPY THIS TO YOUR GIST:', JSON.stringify(config, null, 2));
-                }, 1000);
+                // Llamar a la Netlify Function
+                const response = await fetch('/.netlify/functions/update-gist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || `HTTP error! status: ${response.status}`);
+                }
+
+                console.log('Configuration saved successfully:', result);
+                showAlert('¡Cambios guardados exitosamente! La configuración se ha actualizado automáticamente.', 'success');
+                disableAllButtons(false);
 
                 return true;
                 
             } catch (error) {
                 console.error('Error saving configuration:', error);
-                showAlert('Error al guardar la configuración', 'danger');
+                showAlert(`Error al guardar: ${error.message}`, 'danger');
                 disableAllButtons(false);
                 return false;
             }
