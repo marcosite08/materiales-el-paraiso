@@ -290,7 +290,7 @@
         let generalAnnouncements = [];
         
         // Cargar configuración desde el panel admin
-        function loadBrandConfiguration() {
+        function loadConfiguration() {
             const savedBrands = localStorage.getItem('calculatorBrands');
             const savedAlerts = localStorage.getItem('brandAlerts');
             const savedAnnouncements = localStorage.getItem('generalAnnouncements');
@@ -321,7 +321,12 @@
             }
 
             if (savedAnnouncements) {
-                generalAnnouncements = JSON.parse(savedAnnouncements);
+                try {
+                    generalAnnouncements = JSON.parse(savedAnnouncements);
+                } catch (error) {
+                    console.error('Error parsing announcements:', error);
+                    generalAnnouncements = [];
+                }
             } else {
                 // Sin anuncios por defecto
                 generalAnnouncements = [];
@@ -335,24 +340,46 @@
         // Renderizar anuncios generales
         function renderAnnouncements() {
             const container = document.getElementById('generalAnnouncements');
+            
+            if (!container) {
+                console.error('Container for announcements not found');
+                return;
+            }
+            
             container.innerHTML = '';
             
+            // Verificar si hay anuncios
+            if (!generalAnnouncements || generalAnnouncements.length === 0) {
+                return;
+            }
+            
             // Mostrar solo anuncios activos
-            const activeAnnouncements = generalAnnouncements.filter(announcement => announcement.active);
+            const activeAnnouncements = generalAnnouncements.filter(announcement => 
+                announcement && announcement.active === true
+            );
             
             for (const announcement of activeAnnouncements) {
+                if (!announcement.title || !announcement.message) continue;
+                
                 const announcementEl = document.createElement('div');
                 announcementEl.className = 'announcement';
                 announcementEl.innerHTML = `
                     <div class="announcement-title">
-                        📢 ${announcement.title}
+                        📢 ${escapeHtml(announcement.title)}
                     </div>
                     <div class="announcement-message">
-                        ${announcement.message}
+                        ${escapeHtml(announcement.message)}
                     </div>
                 `;
                 container.appendChild(announcementEl);
             }
+        }
+        
+        // Función helper para escapar HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
         
         // Actualizar el select de marcas dinámicamente
@@ -455,31 +482,38 @@
         // Escuchar cambios en localStorage para actualizar automáticamente
         window.addEventListener('storage', function(e) {
             if (e.key === 'calculatorBrands' || e.key === 'brandAlerts' || e.key === 'generalAnnouncements') {
-                loadBrandConfiguration();
+                console.log('Storage changed, reloading configuration');
+                loadConfiguration();
                 updateCalculation(); // Recalcular si hay datos activos
             }
         });
         
         // También verificar cambios cada 3 segundos (para mismo tab)
         setInterval(function() {
-            const currentBrands = JSON.stringify(brandMargins);
-            const currentAlerts = JSON.stringify(brandAlerts);
-            const currentAnnouncements = JSON.stringify(generalAnnouncements);
-            const savedBrands = localStorage.getItem('calculatorBrands');
-            const savedAlerts = localStorage.getItem('brandAlerts');
-            const savedAnnouncements = localStorage.getItem('generalAnnouncements');
-            
-            if ((savedBrands && currentBrands !== savedBrands) || 
-                (savedAlerts && currentAlerts !== savedAlerts) ||
-                (savedAnnouncements && currentAnnouncements !== savedAnnouncements)) {
-                loadBrandConfiguration();
-                updateCalculation();
+            try {
+                const currentBrands = JSON.stringify(brandMargins);
+                const currentAlerts = JSON.stringify(brandAlerts);
+                const currentAnnouncements = JSON.stringify(generalAnnouncements);
+                const savedBrands = localStorage.getItem('calculatorBrands');
+                const savedAlerts = localStorage.getItem('brandAlerts');
+                const savedAnnouncements = localStorage.getItem('generalAnnouncements');
+                
+                if ((savedBrands && currentBrands !== savedBrands) || 
+                    (savedAlerts && currentAlerts !== savedAlerts) ||
+                    (savedAnnouncements && currentAnnouncements !== savedAnnouncements)) {
+                    console.log('Data changed, updating...');
+                    loadConfiguration();
+                    updateCalculation();
+                }
+            } catch (error) {
+                console.error('Error in periodic check:', error);
             }
         }, 3000);
         
         // Inicializar la aplicación
         document.addEventListener('DOMContentLoaded', function() {
-            loadBrandConfiguration();
+            console.log('DOM loaded, initializing calculator');
+            loadConfiguration();
         });
     </script>
 </body>
