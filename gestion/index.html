@@ -507,6 +507,7 @@
 
         // Inicializar la aplicación
         function initApp() {
+            console.log('Initializing admin panel...');
             loadBrands();
             loadAlerts();
             loadAnnouncements();
@@ -538,7 +539,14 @@
         function loadBrands() {
             const saved = localStorage.getItem('calculatorBrands');
             if (saved) {
-                brands = JSON.parse(saved);
+                try {
+                    brands = JSON.parse(saved);
+                    console.log('Brands loaded:', brands);
+                } catch (error) {
+                    console.error('Error parsing brands:', error);
+                    brands = {...defaultBrands};
+                    saveBrands();
+                }
             } else {
                 brands = {...defaultBrands};
                 saveBrands();
@@ -549,7 +557,14 @@
         function loadAlerts() {
             const saved = localStorage.getItem('brandAlerts');
             if (saved) {
-                brandAlerts = JSON.parse(saved);
+                try {
+                    brandAlerts = JSON.parse(saved);
+                    console.log('Alerts loaded:', brandAlerts);
+                } catch (error) {
+                    console.error('Error parsing alerts:', error);
+                    brandAlerts = {...defaultAlerts};
+                    saveAlerts();
+                }
             } else {
                 brandAlerts = {...defaultAlerts};
                 saveAlerts();
@@ -560,7 +575,14 @@
         function loadAnnouncements() {
             const saved = localStorage.getItem('generalAnnouncements');
             if (saved) {
-                generalAnnouncements = JSON.parse(saved);
+                try {
+                    generalAnnouncements = JSON.parse(saved);
+                    console.log('Announcements loaded:', generalAnnouncements);
+                } catch (error) {
+                    console.error('Error parsing announcements:', error);
+                    generalAnnouncements = [...defaultAnnouncements];
+                    saveAnnouncements();
+                }
             } else {
                 generalAnnouncements = [...defaultAnnouncements];
                 saveAnnouncements();
@@ -571,16 +593,19 @@
         function saveBrands() {
             localStorage.setItem('calculatorBrands', JSON.stringify(brands));
             localStorage.setItem('materialsBrands', JSON.stringify(brands));
+            console.log('Brands saved:', brands);
         }
 
         // Guardar alertas en localStorage
         function saveAlerts() {
             localStorage.setItem('brandAlerts', JSON.stringify(brandAlerts));
+            console.log('Alerts saved:', brandAlerts);
         }
 
         // Guardar anuncios en localStorage
         function saveAnnouncements() {
             localStorage.setItem('generalAnnouncements', JSON.stringify(generalAnnouncements));
+            console.log('Announcements saved:', generalAnnouncements);
         }
 
         // Actualizar select de marcas para alertas
@@ -611,7 +636,7 @@
             if (message.trim()) {
                 previewContainer.innerHTML = `
                     <div class="alert-preview">
-                        ⚠️ ${message} ⚠️
+                        ⚠️ ${escapeHtml(message)} ⚠️
                     </div>
                 `;
             } else {
@@ -631,13 +656,20 @@
             if (title.trim() || message.trim()) {
                 previewContainer.innerHTML = `
                     <div class="announcement-preview">
-                        📢 <strong>${title}</strong><br>
-                        ${message}
+                        📢 <strong>${escapeHtml(title)}</strong><br>
+                        ${escapeHtml(message)}
                     </div>
                 `;
             } else {
                 previewContainer.innerHTML = '';
             }
+        }
+
+        // Función helper para escapar HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
         // Renderizar tabla de marcas
@@ -686,7 +718,7 @@
                         ${formatBrandName(brandKey)}
                     </td>
                     <td style="max-width: 300px; word-break: break-word;">
-                        ${message}
+                        ${escapeHtml(message)}
                     </td>
                     <td>
                         <div class="action-buttons">
@@ -713,10 +745,10 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td style="font-weight: 600;">
-                        ${announcement.title}
+                        ${escapeHtml(announcement.title)}
                     </td>
                     <td style="max-width: 300px; word-break: break-word;">
-                        ${announcement.message}
+                        ${escapeHtml(announcement.message)}
                     </td>
                     <td>
                         <span class="${announcement.active ? 'status-active' : 'status-inactive'}">
@@ -856,7 +888,7 @@
                     title: title,
                     message: message,
                     active: active,
-                    id: Date.now()
+                    id: generalAnnouncements[currentEditingAnnouncement].id || Date.now()
                 };
                 showAlert('Anuncio actualizado correctamente');
                 currentEditingAnnouncement = null;
@@ -872,4 +904,204 @@
             }
             
             saveAnnouncements();
-            renderAnnouncem
+            renderAnnouncementsTable();
+            document.getElementById('announcementForm').reset();
+            document.getElementById('announcementPreview').innerHTML = '';
+        });
+
+        // Editar marca
+        function editBrand(brandKey) {
+            currentEditingBrand = brandKey;
+            document.getElementById('brandName').value = formatBrandName(brandKey);
+            document.getElementById('brandMargin').value = brands[brandKey];
+            document.getElementById('formButtonText').textContent = 'Actualizar Marca';
+            
+            showAlert('Editando marca: ' + formatBrandName(brandKey), 'success');
+        }
+
+        // Editar alerta
+        function editAlert(brandKey) {
+            currentEditingAlert = brandKey;
+            document.getElementById('alertBrand').value = brandKey;
+            document.getElementById('alertMessage').value = brandAlerts[brandKey];
+            document.getElementById('alertFormButtonText').textContent = 'Actualizar Alerta';
+            
+            document.getElementById('alertPreview').innerHTML = `
+                <div class="alert-preview">
+                    ⚠️ ${escapeHtml(brandAlerts[brandKey])} ⚠️
+                </div>
+            `;
+            
+            showAlert('Editando alerta para: ' + formatBrandName(brandKey), 'success');
+        }
+
+        // Editar anuncio
+        function editAnnouncement(index) {
+            currentEditingAnnouncement = index;
+            const announcement = generalAnnouncements[index];
+            
+            document.getElementById('announcementTitle').value = announcement.title;
+            document.getElementById('announcementMessage').value = announcement.message;
+            document.getElementById('announcementActive').value = announcement.active.toString();
+            document.getElementById('announcementFormButtonText').textContent = '📝 Actualizar Anuncio';
+            
+            updateAnnouncementPreview();
+            showAlert('Editando anuncio: ' + announcement.title, 'success');
+        }
+
+        // Eliminar marca
+        function deleteBrand(brandKey) {
+            if (confirm(`¿Estás seguro de eliminar la marca "${formatBrandName(brandKey)}"?`)) {
+                delete brands[brandKey];
+                if (brandAlerts[brandKey]) {
+                    delete brandAlerts[brandKey];
+                }
+                
+                saveBrands();
+                saveAlerts();
+                renderBrandsTable();
+                renderAlertsTable();
+                updateAlertBrandSelect();
+                showAlert('Marca eliminada correctamente');
+                
+                if (currentEditingBrand === brandKey) {
+                    currentEditingBrand = null;
+                    document.getElementById('formButtonText').textContent = 'Agregar Marca';
+                    document.getElementById('brandForm').reset();
+                }
+            }
+        }
+
+        // Eliminar alerta
+        function deleteAlert(brandKey) {
+            if (confirm(`¿Estás seguro de eliminar la alerta para "${formatBrandName(brandKey)}"?`)) {
+                delete brandAlerts[brandKey];
+                saveAlerts();
+                renderAlertsTable();
+                showAlert('Alerta eliminada correctamente');
+                
+                if (currentEditingAlert === brandKey) {
+                    currentEditingAlert = null;
+                    document.getElementById('alertFormButtonText').textContent = 'Agregar Alerta';
+                    document.getElementById('alertForm').reset();
+                    document.getElementById('alertPreview').innerHTML = '';
+                }
+            }
+        }
+
+        // Eliminar anuncio
+        function deleteAnnouncement(index) {
+            const announcement = generalAnnouncements[index];
+            if (confirm(`¿Estás seguro de eliminar el anuncio "${announcement.title}"?`)) {
+                generalAnnouncements.splice(index, 1);
+                saveAnnouncements();
+                renderAnnouncementsTable();
+                showAlert('Anuncio eliminado correctamente');
+                
+                if (currentEditingAnnouncement === index) {
+                    currentEditingAnnouncement = null;
+                    document.getElementById('announcementFormButtonText').textContent = '📢 Agregar Anuncio';
+                    document.getElementById('announcementForm').reset();
+                    document.getElementById('announcementPreview').innerHTML = '';
+                }
+            }
+        }
+
+        // Exportar datos
+        function exportData() {
+            const data = {
+                brands: brands,
+                alerts: brandAlerts,
+                announcements: generalAnnouncements
+            };
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `materiales_completo_backup_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+            showAlert('Datos exportados correctamente');
+        }
+
+        // Importar datos
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    if (importedData.brands) {
+                        brands = importedData.brands;
+                        saveBrands();
+                        renderBrandsTable();
+                        updateAlertBrandSelect();
+                    }
+                    
+                    if (importedData.alerts) {
+                        brandAlerts = importedData.alerts;
+                        saveAlerts();
+                        renderAlertsTable();
+                    }
+                    
+                    if (importedData.announcements) {
+                        generalAnnouncements = importedData.announcements;
+                        saveAnnouncements();
+                        renderAnnouncementsTable();
+                    }
+                    
+                    showAlert('Datos importados correctamente');
+                } catch (error) {
+                    console.error('Import error:', error);
+                    showAlert('Error al leer el archivo', 'danger');
+                }
+            };
+            reader.readAsText(file);
+            
+            event.target.value = '';
+        }
+
+        // Restaurar datos originales
+        function resetData() {
+            if (confirm('¿Estás seguro de restaurar los datos originales? Se perderán todos los cambios.')) {
+                brands = {...defaultBrands};
+                brandAlerts = {...defaultAlerts};
+                generalAnnouncements = [...defaultAnnouncements];
+                saveBrands();
+                saveAlerts();
+                saveAnnouncements();
+                renderBrandsTable();
+                renderAlertsTable();
+                renderAnnouncementsTable();
+                updateAlertBrandSelect();
+                showAlert('Datos restaurados a configuración original');
+                
+                // Limpiar estados de edición
+                currentEditingBrand = null;
+                currentEditingAlert = null;
+                currentEditingAnnouncement = null;
+                document.getElementById('formButtonText').textContent = 'Agregar Marca';
+                document.getElementById('alertFormButtonText').textContent = 'Agregar Alerta';
+                document.getElementById('announcementFormButtonText').textContent = '📢 Agregar Anuncio';
+                document.getElementById('brandForm').reset();
+                document.getElementById('alertForm').reset();
+                document.getElementById('announcementForm').reset();
+                document.getElementById('alertPreview').innerHTML = '';
+                document.getElementById('announcementPreview').innerHTML = '';
+            }
+        }
+
+        // Inicializar cuando cargue la página
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing admin panel...');
+            initApp();
+        });
+    </script>
+</body>
+</html>
