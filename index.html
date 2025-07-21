@@ -130,8 +130,8 @@
             font-style: italic;
         }
 
-        /* Estilos para la alerta especial de Truper */
-        .truper-alert {
+        /* Estilos para las alertas dinámicas */
+        .brand-alert {
             display: none;
             background: linear-gradient(45deg, #ff6b6b, #ffd93d);
             border: 3px solid #ff4757;
@@ -142,11 +142,11 @@
             box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
         }
 
-        .truper-alert.show {
+        .brand-alert.show {
             display: block;
         }
 
-        .truper-alert-content {
+        .brand-alert-content {
             color: #2c2c2c;
             font-weight: bold;
             font-size: 14px;
@@ -156,7 +156,7 @@
             gap: 10px;
         }
 
-        .truper-alert-icon {
+        .brand-alert-icon {
             font-size: 20px;
         }
 
@@ -170,7 +170,7 @@
                 font-size: 24px;
             }
 
-            .truper-alert-content {
+            .brand-alert-content {
                 font-size: 13px;
                 flex-direction: column;
                 gap: 5px;
@@ -206,12 +206,12 @@
                 </div>
             </form>
 
-            <!-- Alerta especial para Truper -->
-            <div class="truper-alert" id="truperAlert">
-                <div class="truper-alert-content">
-                    <span class="truper-alert-icon">⚠️</span>
-                    <span>¡ATENCIÓN! No aplica para carretilla cód. 11740, usar marca "Alertas"</span>
-                    <span class="truper-alert-icon">⚠️</span>
+            <!-- Alerta dinámica para cualquier marca -->
+            <div class="brand-alert" id="brandAlert">
+                <div class="brand-alert-content">
+                    <span class="brand-alert-icon">⚠️</span>
+                    <span id="alertMessage"></span>
+                    <span class="brand-alert-icon">⚠️</span>
                 </div>
             </div>
 
@@ -233,14 +233,17 @@
     </div>
 
     <script>
-        // Configuración de márgenes por marca (se carga dinámicamente)
+        // Configuración de márgenes y alertas por marca (se carga dinámicamente)
         let brandMargins = {};
+        let brandAlerts = {};
         
         // Cargar configuración desde el panel admin
         function loadBrandConfiguration() {
-            const saved = localStorage.getItem('calculatorBrands');
-            if (saved) {
-                brandMargins = JSON.parse(saved);
+            const savedBrands = localStorage.getItem('calculatorBrands');
+            const savedAlerts = localStorage.getItem('brandAlerts');
+            
+            if (savedBrands) {
+                brandMargins = JSON.parse(savedBrands);
             } else {
                 // Configuración por defecto si no hay datos del admin
                 brandMargins = {
@@ -251,9 +254,19 @@
                     'perdura': 50,
                     'royalty': 50
                 };
-                // Guardar configuración por defecto
                 localStorage.setItem('calculatorBrands', JSON.stringify(brandMargins));
             }
+            
+            if (savedAlerts) {
+                brandAlerts = JSON.parse(savedAlerts);
+            } else {
+                // Alertas por defecto
+                brandAlerts = {
+                    'truper': '¡ATENCIÓN! No aplica para carretilla cód. 11740, usar marca "Alertas"'
+                };
+                localStorage.setItem('brandAlerts', JSON.stringify(brandAlerts));
+            }
+            
             updateBrandSelect();
         }
         
@@ -287,14 +300,16 @@
                           .trim();
         }
         
-        // Mostrar/ocultar alerta de Truper
-        function toggleTruperAlert(brand) {
-            const truperAlert = document.getElementById('truperAlert');
+        // Mostrar/ocultar alerta dinámica
+        function toggleBrandAlert(brand) {
+            const brandAlert = document.getElementById('brandAlert');
+            const alertMessage = document.getElementById('alertMessage');
             
-            if (brand === 'truper') {
-                truperAlert.classList.add('show');
+            if (brand && brandAlerts[brand]) {
+                alertMessage.textContent = brandAlerts[brand];
+                brandAlert.classList.add('show');
             } else {
-                truperAlert.classList.remove('show');
+                brandAlert.classList.remove('show');
             }
         }
         
@@ -308,8 +323,8 @@
             const brand = brandSelect.value;
             const publicPrice = parseFloat(publicPriceInput.value);
             
-            // Mostrar/ocultar alerta de Truper
-            toggleTruperAlert(brand);
+            // Mostrar/ocultar alerta dinámica
+            toggleBrandAlert(brand);
             
             if (brand && publicPrice && publicPrice > 0) {
                 calculatePrices(brand, publicPrice);
@@ -354,7 +369,7 @@
         
         // Escuchar cambios en localStorage para actualizar automáticamente
         window.addEventListener('storage', function(e) {
-            if (e.key === 'calculatorBrands') {
+            if (e.key === 'calculatorBrands' || e.key === 'brandAlerts') {
                 loadBrandConfiguration();
                 updateCalculation(); // Recalcular si hay datos activos
             }
@@ -362,9 +377,13 @@
         
         // También verificar cambios cada 3 segundos (para mismo tab)
         setInterval(function() {
-            const current = JSON.stringify(brandMargins);
-            const saved = localStorage.getItem('calculatorBrands');
-            if (saved && current !== saved) {
+            const currentBrands = JSON.stringify(brandMargins);
+            const currentAlerts = JSON.stringify(brandAlerts);
+            const savedBrands = localStorage.getItem('calculatorBrands');
+            const savedAlerts = localStorage.getItem('brandAlerts');
+            
+            if ((savedBrands && currentBrands !== savedBrands) || 
+                (savedAlerts && currentAlerts !== savedAlerts)) {
                 loadBrandConfiguration();
                 updateCalculation();
             }
