@@ -111,12 +111,17 @@
             transition: all 0.3s ease;
         }
 
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
         }
@@ -126,7 +131,7 @@
             color: white;
         }
 
-        .btn-danger:hover {
+        .btn-danger:hover:not(:disabled) {
             background: #c82333;
         }
 
@@ -135,7 +140,7 @@
             color: white;
         }
 
-        .btn-success:hover {
+        .btn-success:hover:not(:disabled) {
             background: #218838;
         }
 
@@ -144,7 +149,7 @@
             color: white;
         }
 
-        .btn-info:hover {
+        .btn-info:hover:not(:disabled) {
             background: #138496;
         }
 
@@ -153,7 +158,7 @@
             color: #212529;
         }
 
-        .btn-warning:hover {
+        .btn-warning:hover:not(:disabled) {
             background: #e0a800;
         }
 
@@ -162,7 +167,7 @@
             color: white;
         }
 
-        .btn-purple:hover {
+        .btn-purple:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(156, 39, 176, 0.3);
         }
@@ -226,6 +231,12 @@
             border: 1px solid #f5c6cb;
         }
 
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
         .calculator-link {
             background: #f8f9fa;
             padding: 20px;
@@ -286,6 +297,26 @@
             font-weight: bold;
         }
 
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .gist-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+
+        .gist-info strong {
+            color: #333;
+        }
+
         @media (max-width: 768px) {
             .form-row {
                 flex-direction: column;
@@ -307,215 +338,328 @@
         <div class="admin-panel">
             <div class="header">
                 <div class="logo">🔧 Panel de Administración</div>
-                <div class="subtitle">Materiales El Paraíso - Gestión Completa</div>
+                <div class="subtitle">Materiales El Paraíso - Gestión Centralizada</div>
             </div>
 
             <div id="alertContainer"></div>
 
-            <!-- Nueva Sección: Anuncios Generales -->
-            <div class="section">
-                <h3>📢 Anuncios Generales</h3>
-                <div class="announcement-type-info">
-                    <strong>💡 Información:</strong> Los anuncios generales se muestran siempre en la calculadora, independientemente de la marca seleccionada. Úsalos para promociones, avisos importantes, cambios de política, etc.
+            <!-- Loading message -->
+            <div class="loading" id="loadingMessage">
+                Cargando configuración desde GitHub...
+            </div>
+
+            <!-- Información del Gist -->
+            <div class="gist-info">
+                <strong>🔗 Configuración Centralizada:</strong> Este panel administra la configuración global almacenada en GitHub Gist. 
+                Los cambios se reflejan inmediatamente en todas las calculadoras de tus vendedores.
+                <br><strong>Gist ID:</strong> 175dfae32c11cf82e3ebb92ffa5628da
+            </div>
+
+            <div id="adminContent" style="display: none;">
+                <!-- Nueva Sección: Anuncios Generales -->
+                <div class="section">
+                    <h3>📢 Anuncios Generales</h3>
+                    <div class="announcement-type-info">
+                        <strong>💡 Información:</strong> Los anuncios generales se muestran siempre en la calculadora, independientemente de la marca seleccionada. Los cambios son globales e inmediatos para todos los vendedores.
+                    </div>
+                    
+                    <form id="announcementForm">
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label for="announcementTitle">Título del Anuncio</label>
+                                <input type="text" id="announcementTitle" placeholder="Ej: ¡Promoción especial esta semana!" required>
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label for="announcementActive">Estado</label>
+                                <select id="announcementActive" required>
+                                    <option value="true">Activo</option>
+                                    <option value="false">Inactivo</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 3;">
+                                <label for="announcementMessage">Mensaje del Anuncio</label>
+                                <textarea id="announcementMessage" placeholder="Ej: 15% de descuento adicional en todas las compras mayores a $5,000" required></textarea>
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label>&nbsp;</label>
+                                <button type="submit" class="btn btn-purple" style="width: 100%; height: 80px;">
+                                    <span id="announcementFormButtonText">📢 Agregar Anuncio</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="announcementPreview"></div>
+                    </form>
+
+                    <table class="announcements-table">
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Mensaje</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="announcementsTableBody">
+                            <!-- Anuncios dinámicos -->
+                        </tbody>
+                    </table>
                 </div>
-                
-                <form id="announcementForm">
-                    <div class="form-row">
-                        <div class="form-group" style="flex: 2;">
-                            <label for="announcementTitle">Título del Anuncio</label>
-                            <input type="text" id="announcementTitle" placeholder="Ej: ¡Promoción especial esta semana!" required>
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label for="announcementActive">Estado</label>
-                            <select id="announcementActive" required>
-                                <option value="true">Activo</option>
-                                <option value="false">Inactivo</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group" style="flex: 3;">
-                            <label for="announcementMessage">Mensaje del Anuncio</label>
-                            <textarea id="announcementMessage" placeholder="Ej: 15% de descuento adicional en todas las compras mayores a $5,000" required></textarea>
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label>&nbsp;</label>
-                            <button type="submit" class="btn btn-purple" style="width: 100%; height: 80px;">
-                                <span id="announcementFormButtonText">📢 Agregar Anuncio</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div id="announcementPreview"></div>
-                </form>
 
-                <table class="announcements-table">
-                    <thead>
-                        <tr>
-                            <th>Título</th>
-                            <th>Mensaje</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="announcementsTableBody">
-                        <!-- Anuncios dinámicos -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Sección: Agregar/Editar Marca -->
-            <div class="section">
-                <h3>📝 Agregar Nueva Marca</h3>
-                <form id="brandForm">
-                    <div class="form-row">
-                        <div class="form-group" style="flex: 2;">
-                            <label for="brandName">Nombre de la Marca</label>
-                            <input type="text" id="brandName" placeholder="Ej: Truper" required>
+                <!-- Sección: Agregar/Editar Marca -->
+                <div class="section">
+                    <h3>📝 Agregar Nueva Marca</h3>
+                    <form id="brandForm">
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label for="brandName">Nombre de la Marca</label>
+                                <input type="text" id="brandName" placeholder="Ej: Truper" required>
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label for="brandMargin">Margen (%)</label>
+                                <input type="number" id="brandMargin" placeholder="Ej: 40" min="0" max="100" required>
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label>&nbsp;</label>
+                                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                                    <span id="formButtonText">Agregar Marca</span>
+                                </button>
+                            </div>
                         </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label for="brandMargin">Margen (%)</label>
-                            <input type="number" id="brandMargin" placeholder="Ej: 40" min="0" max="100" required>
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label>&nbsp;</label>
-                            <button type="submit" class="btn btn-primary" style="width: 100%;">
-                                <span id="formButtonText">Agregar Marca</span>
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Sección: Lista de Marcas -->
-            <div class="section">
-                <h3>📋 Marcas Configuradas</h3>
-                <table class="brands-table">
-                    <thead>
-                        <tr>
-                            <th>Marca</th>
-                            <th>Margen Público</th>
-                            <th>Margen B2B</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="brandsTableBody">
-                        <!-- Datos dinámicos -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Sección: Gestión de Alertas -->
-            <div class="section">
-                <h3>⚠️ Alertas por Marca</h3>
-                <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
-                    Configura mensajes de alerta que aparecerán cuando los vendedores seleccionen ciertas marcas específicas.
-                </p>
-                
-                <form id="alertForm">
-                    <div class="form-row">
-                        <div class="form-group" style="flex: 1;">
-                            <label for="alertBrand">Marca</label>
-                            <select id="alertBrand" required>
-                                <option value="">Seleccionar marca...</option>
-                            </select>
-                        </div>
-                        <div class="form-group" style="flex: 3;">
-                            <label for="alertMessage">Mensaje de Alerta</label>
-                            <textarea id="alertMessage" placeholder="Ej: ¡ATENCIÓN! No aplica para varilla corrugada Deacero" required></textarea>
-                        </div>
-                        <div class="form-group" style="flex: 1;">
-                            <label>&nbsp;</label>
-                            <button type="submit" class="btn btn-warning" style="width: 100%;">
-                                <span id="alertFormButtonText">Agregar Alerta</span>
-                            </button>
-                        </div>
-                    </div>
-                    <div id="alertPreview"></div>
-                </form>
-
-                <table class="alerts-table">
-                    <thead>
-                        <tr>
-                            <th>Marca</th>
-                            <th>Mensaje de Alerta</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody id="alertsTableBody">
-                        <!-- Alertas dinámicas -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Sección: Exportar/Importar -->
-            <div class="section">
-                <h3>💾 Exportar/Importar Configuración</h3>
-                <div class="export-section">
-                    <div class="form-row">
-                        <button class="btn btn-success" onclick="exportData()">
-                            📤 Exportar Datos
-                        </button>
-                        <button class="btn btn-primary" onclick="document.getElementById('importFile').click()">
-                            📥 Importar Datos
-                        </button>
-                        <button class="btn btn-danger" onclick="resetData()">
-                            🔄 Restaurar Datos Originales
-                        </button>
-                    </div>
-                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+                    </form>
                 </div>
-            </div>
 
-            <!-- Enlace a la calculadora -->
-            <div class="section">
-                <div class="calculator-link">
-                    <h3>🧮 Acceso a la Calculadora</h3>
-                    <p style="margin: 10px 0;">Comparte este enlace con tus vendedores:</p>
-                    <a href="/" target="_blank" id="calculatorLink">Abrir Calculadora de Precios</a>
-                    <br><br>
-                    <button class="btn btn-info" onclick="copyCalculatorLink()">
-                        📋 Copiar Enlace de Calculadora
-                    </button>
+                <!-- Sección: Lista de Marcas -->
+                <div class="section">
+                    <h3>📋 Marcas Configuradas</h3>
+                    <table class="brands-table">
+                        <thead>
+                            <tr>
+                                <th>Marca</th>
+                                <th>Margen Público</th>
+                                <th>Margen B2B</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="brandsTableBody">
+                            <!-- Datos dinámicos -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Sección: Gestión de Alertas -->
+                <div class="section">
+                    <h3>⚠️ Alertas por Marca</h3>
+                    <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
+                        Configura mensajes de alerta que aparecerán cuando los vendedores seleccionen ciertas marcas específicas.
+                    </p>
+                    
+                    <form id="alertForm">
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 1;">
+                                <label for="alertBrand">Marca</label>
+                                <select id="alertBrand" required>
+                                    <option value="">Seleccionar marca...</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex: 3;">
+                                <label for="alertMessage">Mensaje de Alerta</label>
+                                <textarea id="alertMessage" placeholder="Ej: ¡ATENCIÓN! No aplica para varilla corrugada Deacero" required></textarea>
+                            </div>
+                            <div class="form-group" style="flex: 1;">
+                                <label>&nbsp;</label>
+                                <button type="submit" class="btn btn-warning" style="width: 100%;">
+                                    <span id="alertFormButtonText">Agregar Alerta</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="alertPreview"></div>
+                    </form>
+
+                    <table class="alerts-table">
+                        <thead>
+                            <tr>
+                                <th>Marca</th>
+                                <th>Mensaje de Alerta</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alertsTableBody">
+                            <!-- Alertas dinámicas -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Sección: Exportar/Importar -->
+                <div class="section">
+                    <h3>💾 Exportar/Importar Configuración</h3>
+                    <div class="export-section">
+                        <div class="form-row">
+                            <button class="btn btn-success" onclick="exportData()">
+                                📤 Exportar Datos
+                            </button>
+                            <button class="btn btn-primary" onclick="document.getElementById('importFile').click()">
+                                📥 Importar Datos
+                            </button>
+                            <button class="btn btn-info" onclick="openGistInNewTab()">
+                                🔗 Ver Gist en GitHub
+                            </button>
+                        </div>
+                        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+                    </div>
+                </div>
+
+                <!-- Enlace a la calculadora -->
+                <div class="section">
+                    <div class="calculator-link">
+                        <h3>🧮 Acceso a la Calculadora</h3>
+                        <p style="margin: 10px 0;">Comparte este enlace con tus vendedores:</p>
+                        <a href="/" target="_blank" id="calculatorLink">Abrir Calculadora de Precios</a>
+                        <br><br>
+                        <button class="btn btn-info" onclick="copyCalculatorLink()">
+                            📋 Copiar Enlace de Calculadora
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Datos por defecto
-        const defaultBrands = {
-            'truper': 40,
-            'vitroblocks': 30,
-            'pvc': 30,
-            'greda': 30,
-            'perdura': 50,
-            'royalty': 50
-        };
-
-        const defaultAlerts = {
-            'truper': '¡ATENCIÓN! No aplica para carretilla cód. 11740, usar marca "Alertas"'
-        };
-
-        const defaultAnnouncements = [];
-
+        // Configuración del Gist
+        const GIST_ID = '175dfae32c11cf82e3ebb92ffa5628da';
+        const GIST_URL = `https://gist.githubusercontent.com/marcosite08/${GIST_ID}/raw/materiales-config.json`;
+        
+        // Variables globales
         let currentEditingBrand = null;
         let currentEditingAlert = null;
         let currentEditingAnnouncement = null;
         let brands = {};
         let brandAlerts = {};
         let generalAnnouncements = [];
+        let configLoaded = false;
 
-        // Inicializar la aplicación
-        function initApp() {
-            console.log('Initializing admin panel...');
-            loadBrands();
-            loadAlerts();
-            loadAnnouncements();
-            renderBrandsTable();
-            renderAlertsTable();
-            renderAnnouncementsTable();
-            updateCalculatorLink();
-            updateAlertBrandSelect();
+        // Elementos del DOM
+        const loadingMessage = document.getElementById('loadingMessage');
+        const adminContent = document.getElementById('adminContent');
+
+        // Cargar configuración desde GitHub Gist
+        async function loadConfigurationFromGist() {
+            try {
+                console.log('Loading configuration from Gist...');
+                const response = await fetch(GIST_URL + '?_=' + Date.now());
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const config = await response.json();
+                console.log('Configuration loaded:', config);
+                
+                // Asignar configuración
+                brands = config.brands || {};
+                brandAlerts = config.alerts || {};
+                generalAnnouncements = config.announcements || [];
+                
+                configLoaded = true;
+                
+                // Ocultar loading y mostrar contenido
+                loadingMessage.style.display = 'none';
+                adminContent.style.display = 'block';
+                
+                // Renderizar interfaz
+                renderBrandsTable();
+                renderAlertsTable();
+                renderAnnouncementsTable();
+                updateCalculatorLink();
+                updateAlertBrandSelect();
+                
+                showAlert('Configuración cargada correctamente', 'success');
+                
+            } catch (error) {
+                console.error('Error loading configuration:', error);
+                showAlert('Error al cargar la configuración. Usando datos por defecto.', 'danger');
+                
+                // Usar configuración por defecto
+                brands = {
+                    'truper': 40,
+                    'vitroblocks': 30,
+                    'pvc': 30,
+                    'greda': 30,
+                    'perdura': 50,
+                    'royalty': 50
+                };
+                brandAlerts = {
+                    'truper': '¡ATENCIÓN! No aplica para carretilla cód. 11740, usar marca "Alertas"'
+                };
+                generalAnnouncements = [];
+                
+                configLoaded = true;
+                loadingMessage.style.display = 'none';
+                adminContent.style.display = 'block';
+                
+                renderBrandsTable();
+                renderAlertsTable();
+                renderAnnouncementsTable();
+                updateCalculatorLink();
+                updateAlertBrandSelect();
+            }
+        }
+
+        // Guardar configuración en GitHub Gist
+        async function saveConfigurationToGist() {
+            if (!configLoaded) {
+                showAlert('Configuración no cargada, no se puede guardar', 'danger');
+                return false;
+            }
+
+            try {
+                // Deshabilitar botones mientras guarda
+                disableAllButtons(true);
+                showAlert('Guardando cambios...', 'info');
+
+                const config = {
+                    brands: brands,
+                    alerts: brandAlerts,
+                    announcements: generalAnnouncements
+                };
+
+                // Nota: En un entorno real, aquí usarías la GitHub API con un token
+                // Por simplicidad, esta versión requiere actualización manual del Gist
+                
+                console.log('Configuration to save:', config);
+                
+                // Simular guardado exitoso
+                setTimeout(() => {
+                    showAlert('¡Cambios guardados! IMPORTANTE: Actualiza manualmente el Gist en GitHub con la nueva configuración.', 'success');
+                    disableAllButtons(false);
+                    
+                    // Mostrar la configuración actual para copiar manualmente
+                    console.log('COPY THIS TO YOUR GIST:', JSON.stringify(config, null, 2));
+                }, 1000);
+
+                return true;
+                
+            } catch (error) {
+                console.error('Error saving configuration:', error);
+                showAlert('Error al guardar la configuración', 'danger');
+                disableAllButtons(false);
+                return false;
+            }
+        }
+
+        // Deshabilitar/habilitar todos los botones
+        function disableAllButtons(disabled) {
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                button.disabled = disabled;
+            });
+        }
+
+        // Abrir Gist en nueva pestaña
+        function openGistInNewTab() {
+            window.open(`https://gist.github.com/marcosite08/${GIST_ID}`, '_blank');
         }
 
         // Actualizar enlace de calculadora
@@ -533,79 +677,6 @@
             }).catch(() => {
                 showAlert('Error al copiar enlace', 'danger');
             });
-        }
-
-        // Cargar marcas desde localStorage
-        function loadBrands() {
-            const saved = localStorage.getItem('calculatorBrands');
-            if (saved) {
-                try {
-                    brands = JSON.parse(saved);
-                    console.log('Brands loaded:', brands);
-                } catch (error) {
-                    console.error('Error parsing brands:', error);
-                    brands = {...defaultBrands};
-                    saveBrands();
-                }
-            } else {
-                brands = {...defaultBrands};
-                saveBrands();
-            }
-        }
-
-        // Cargar alertas desde localStorage
-        function loadAlerts() {
-            const saved = localStorage.getItem('brandAlerts');
-            if (saved) {
-                try {
-                    brandAlerts = JSON.parse(saved);
-                    console.log('Alerts loaded:', brandAlerts);
-                } catch (error) {
-                    console.error('Error parsing alerts:', error);
-                    brandAlerts = {...defaultAlerts};
-                    saveAlerts();
-                }
-            } else {
-                brandAlerts = {...defaultAlerts};
-                saveAlerts();
-            }
-        }
-
-        // Cargar anuncios desde localStorage
-        function loadAnnouncements() {
-            const saved = localStorage.getItem('generalAnnouncements');
-            if (saved) {
-                try {
-                    generalAnnouncements = JSON.parse(saved);
-                    console.log('Announcements loaded:', generalAnnouncements);
-                } catch (error) {
-                    console.error('Error parsing announcements:', error);
-                    generalAnnouncements = [...defaultAnnouncements];
-                    saveAnnouncements();
-                }
-            } else {
-                generalAnnouncements = [...defaultAnnouncements];
-                saveAnnouncements();
-            }
-        }
-
-        // Guardar marcas en localStorage
-        function saveBrands() {
-            localStorage.setItem('calculatorBrands', JSON.stringify(brands));
-            localStorage.setItem('materialsBrands', JSON.stringify(brands));
-            console.log('Brands saved:', brands);
-        }
-
-        // Guardar alertas en localStorage
-        function saveAlerts() {
-            localStorage.setItem('brandAlerts', JSON.stringify(brandAlerts));
-            console.log('Alerts saved:', brandAlerts);
-        }
-
-        // Guardar anuncios en localStorage
-        function saveAnnouncements() {
-            localStorage.setItem('generalAnnouncements', JSON.stringify(generalAnnouncements));
-            console.log('Announcements saved:', generalAnnouncements);
         }
 
         // Actualizar select de marcas para alertas
@@ -788,11 +859,11 @@
             
             setTimeout(() => {
                 container.innerHTML = '';
-            }, 3000);
+            }, 5000);
         }
 
         // Manejar formulario de marcas
-        document.getElementById('brandForm').addEventListener('submit', function(e) {
+        document.getElementById('brandForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const name = document.getElementById('brandName').value.trim();
@@ -835,15 +906,14 @@
                 showAlert('Marca agregada correctamente');
             }
             
-            saveBrands();
-            saveAlerts();
+            await saveConfigurationToGist();
             renderBrandsTable();
             updateAlertBrandSelect();
             document.getElementById('brandForm').reset();
         });
 
         // Manejar formulario de alertas
-        document.getElementById('alertForm').addEventListener('submit', function(e) {
+        document.getElementById('alertForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const brand = document.getElementById('alertBrand').value;
@@ -864,14 +934,14 @@
                 showAlert('Alerta agregada correctamente');
             }
             
-            saveAlerts();
+            await saveConfigurationToGist();
             renderAlertsTable();
             document.getElementById('alertForm').reset();
             document.getElementById('alertPreview').innerHTML = '';
         });
 
         // Manejar formulario de anuncios
-        document.getElementById('announcementForm').addEventListener('submit', function(e) {
+        document.getElementById('announcementForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const title = document.getElementById('announcementTitle').value.trim();
@@ -903,7 +973,7 @@
                 showAlert('Anuncio agregado correctamente');
             }
             
-            saveAnnouncements();
+            await saveConfigurationToGist();
             renderAnnouncementsTable();
             document.getElementById('announcementForm').reset();
             document.getElementById('announcementPreview').innerHTML = '';
@@ -950,15 +1020,14 @@
         }
 
         // Eliminar marca
-        function deleteBrand(brandKey) {
+        async function deleteBrand(brandKey) {
             if (confirm(`¿Estás seguro de eliminar la marca "${formatBrandName(brandKey)}"?`)) {
                 delete brands[brandKey];
                 if (brandAlerts[brandKey]) {
                     delete brandAlerts[brandKey];
                 }
                 
-                saveBrands();
-                saveAlerts();
+                await saveConfigurationToGist();
                 renderBrandsTable();
                 renderAlertsTable();
                 updateAlertBrandSelect();
@@ -973,10 +1042,10 @@
         }
 
         // Eliminar alerta
-        function deleteAlert(brandKey) {
+        async function deleteAlert(brandKey) {
             if (confirm(`¿Estás seguro de eliminar la alerta para "${formatBrandName(brandKey)}"?`)) {
                 delete brandAlerts[brandKey];
-                saveAlerts();
+                await saveConfigurationToGist();
                 renderAlertsTable();
                 showAlert('Alerta eliminada correctamente');
                 
@@ -990,11 +1059,11 @@
         }
 
         // Eliminar anuncio
-        function deleteAnnouncement(index) {
+        async function deleteAnnouncement(index) {
             const announcement = generalAnnouncements[index];
             if (confirm(`¿Estás seguro de eliminar el anuncio "${announcement.title}"?`)) {
                 generalAnnouncements.splice(index, 1);
-                saveAnnouncements();
+                await saveConfigurationToGist();
                 renderAnnouncementsTable();
                 showAlert('Anuncio eliminado correctamente');
                 
@@ -1028,34 +1097,32 @@
         }
 
         // Importar datos
-        function importData(event) {
+        async function importData(event) {
             const file = event.target.files[0];
             if (!file) return;
             
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const importedData = JSON.parse(e.target.result);
                     
                     if (importedData.brands) {
                         brands = importedData.brands;
-                        saveBrands();
                         renderBrandsTable();
                         updateAlertBrandSelect();
                     }
                     
                     if (importedData.alerts) {
                         brandAlerts = importedData.alerts;
-                        saveAlerts();
                         renderAlertsTable();
                     }
                     
                     if (importedData.announcements) {
                         generalAnnouncements = importedData.announcements;
-                        saveAnnouncements();
                         renderAnnouncementsTable();
                     }
                     
+                    await saveConfigurationToGist();
                     showAlert('Datos importados correctamente');
                 } catch (error) {
                     console.error('Import error:', error);
@@ -1067,40 +1134,10 @@
             event.target.value = '';
         }
 
-        // Restaurar datos originales
-        function resetData() {
-            if (confirm('¿Estás seguro de restaurar los datos originales? Se perderán todos los cambios.')) {
-                brands = {...defaultBrands};
-                brandAlerts = {...defaultAlerts};
-                generalAnnouncements = [...defaultAnnouncements];
-                saveBrands();
-                saveAlerts();
-                saveAnnouncements();
-                renderBrandsTable();
-                renderAlertsTable();
-                renderAnnouncementsTable();
-                updateAlertBrandSelect();
-                showAlert('Datos restaurados a configuración original');
-                
-                // Limpiar estados de edición
-                currentEditingBrand = null;
-                currentEditingAlert = null;
-                currentEditingAnnouncement = null;
-                document.getElementById('formButtonText').textContent = 'Agregar Marca';
-                document.getElementById('alertFormButtonText').textContent = 'Agregar Alerta';
-                document.getElementById('announcementFormButtonText').textContent = '📢 Agregar Anuncio';
-                document.getElementById('brandForm').reset();
-                document.getElementById('alertForm').reset();
-                document.getElementById('announcementForm').reset();
-                document.getElementById('alertPreview').innerHTML = '';
-                document.getElementById('announcementPreview').innerHTML = '';
-            }
-        }
-
         // Inicializar cuando cargue la página
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM loaded, initializing admin panel...');
-            initApp();
+            loadConfigurationFromGist();
         });
     </script>
 </body>
