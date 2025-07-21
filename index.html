@@ -23,7 +23,7 @@
         .container {
             max-width: 500px;
             margin: 0 auto;
-            padding-top: 50px;
+            padding-top: 30px;
         }
 
         .calculator {
@@ -130,7 +130,37 @@
             font-style: italic;
         }
 
-        /* Estilos para las alertas dinámicas */
+        /* Estilos para anuncios generales */
+        .general-announcements {
+            margin-bottom: 30px;
+        }
+
+        .announcement {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 3px solid #5a67d8;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(90, 103, 216, 0.3);
+        }
+
+        .announcement-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .announcement-message {
+            font-size: 14px;
+            line-height: 1.4;
+            opacity: 0.95;
+        }
+
+        /* Estilos para las alertas dinámicas por marca */
         .brand-alert {
             display: none;
             background: linear-gradient(45deg, #ff6b6b, #ffd93d);
@@ -161,6 +191,10 @@
         }
 
         @media (max-width: 480px) {
+            .container {
+                padding-top: 20px;
+            }
+
             .calculator {
                 padding: 25px;
                 margin: 10px;
@@ -175,6 +209,18 @@
                 flex-direction: column;
                 gap: 5px;
             }
+
+            .announcement {
+                padding: 15px;
+            }
+
+            .announcement-title {
+                font-size: 15px;
+            }
+
+            .announcement-message {
+                font-size: 13px;
+            }
         }
     </style>
 </head>
@@ -184,6 +230,11 @@
             <div class="header">
                 <div class="logo">🏗️ Materiales El Paraíso</div>
                 <div class="subtitle">Calculadora de Precios</div>
+            </div>
+
+            <!-- Anuncios Generales -->
+            <div class="general-announcements" id="generalAnnouncements">
+                <!-- Los anuncios se cargan dinámicamente aquí -->
             </div>
 
             <form id="priceCalculator">
@@ -206,7 +257,7 @@
                 </div>
             </form>
 
-            <!-- Alerta dinámica para cualquier marca -->
+            <!-- Alerta dinámica para marca específica -->
             <div class="brand-alert" id="brandAlert">
                 <div class="brand-alert-content">
                     <span class="brand-alert-icon">⚠️</span>
@@ -233,14 +284,16 @@
     </div>
 
     <script>
-        // Configuración de márgenes y alertas por marca (se carga dinámicamente)
+        // Configuración de márgenes, alertas y anuncios (se carga dinámicamente)
         let brandMargins = {};
         let brandAlerts = {};
+        let generalAnnouncements = [];
         
         // Cargar configuración desde el panel admin
         function loadBrandConfiguration() {
             const savedBrands = localStorage.getItem('calculatorBrands');
             const savedAlerts = localStorage.getItem('brandAlerts');
+            const savedAnnouncements = localStorage.getItem('generalAnnouncements');
             
             if (savedBrands) {
                 brandMargins = JSON.parse(savedBrands);
@@ -266,8 +319,40 @@
                 };
                 localStorage.setItem('brandAlerts', JSON.stringify(brandAlerts));
             }
+
+            if (savedAnnouncements) {
+                generalAnnouncements = JSON.parse(savedAnnouncements);
+            } else {
+                // Sin anuncios por defecto
+                generalAnnouncements = [];
+                localStorage.setItem('generalAnnouncements', JSON.stringify(generalAnnouncements));
+            }
             
             updateBrandSelect();
+            renderAnnouncements();
+        }
+        
+        // Renderizar anuncios generales
+        function renderAnnouncements() {
+            const container = document.getElementById('generalAnnouncements');
+            container.innerHTML = '';
+            
+            // Mostrar solo anuncios activos
+            const activeAnnouncements = generalAnnouncements.filter(announcement => announcement.active);
+            
+            for (const announcement of activeAnnouncements) {
+                const announcementEl = document.createElement('div');
+                announcementEl.className = 'announcement';
+                announcementEl.innerHTML = `
+                    <div class="announcement-title">
+                        📢 ${announcement.title}
+                    </div>
+                    <div class="announcement-message">
+                        ${announcement.message}
+                    </div>
+                `;
+                container.appendChild(announcementEl);
+            }
         }
         
         // Actualizar el select de marcas dinámicamente
@@ -300,7 +385,7 @@
                           .trim();
         }
         
-        // Mostrar/ocultar alerta dinámica
+        // Mostrar/ocultar alerta dinámica por marca
         function toggleBrandAlert(brand) {
             const brandAlert = document.getElementById('brandAlert');
             const alertMessage = document.getElementById('alertMessage');
@@ -323,7 +408,7 @@
             const brand = brandSelect.value;
             const publicPrice = parseFloat(publicPriceInput.value);
             
-            // Mostrar/ocultar alerta dinámica
+            // Mostrar/ocultar alerta dinámica por marca
             toggleBrandAlert(brand);
             
             if (brand && publicPrice && publicPrice > 0) {
@@ -369,7 +454,7 @@
         
         // Escuchar cambios en localStorage para actualizar automáticamente
         window.addEventListener('storage', function(e) {
-            if (e.key === 'calculatorBrands' || e.key === 'brandAlerts') {
+            if (e.key === 'calculatorBrands' || e.key === 'brandAlerts' || e.key === 'generalAnnouncements') {
                 loadBrandConfiguration();
                 updateCalculation(); // Recalcular si hay datos activos
             }
@@ -379,11 +464,14 @@
         setInterval(function() {
             const currentBrands = JSON.stringify(brandMargins);
             const currentAlerts = JSON.stringify(brandAlerts);
+            const currentAnnouncements = JSON.stringify(generalAnnouncements);
             const savedBrands = localStorage.getItem('calculatorBrands');
             const savedAlerts = localStorage.getItem('brandAlerts');
+            const savedAnnouncements = localStorage.getItem('generalAnnouncements');
             
             if ((savedBrands && currentBrands !== savedBrands) || 
-                (savedAlerts && currentAlerts !== savedAlerts)) {
+                (savedAlerts && currentAlerts !== savedAlerts) ||
+                (savedAnnouncements && currentAnnouncements !== savedAnnouncements)) {
                 loadBrandConfiguration();
                 updateCalculation();
             }
