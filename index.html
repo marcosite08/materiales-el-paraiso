@@ -128,6 +128,7 @@
             text-align: center;
             color: #666;
             font-style: italic;
+            padding: 20px;
         }
 
         /* Estilos para anuncios generales */
@@ -190,6 +191,16 @@
             font-size: 20px;
         }
 
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
         @media (max-width: 480px) {
             .container {
                 padding-top: 20px;
@@ -232,16 +243,26 @@
                 <div class="subtitle">Calculadora de Precios</div>
             </div>
 
+            <!-- Loading message -->
+            <div class="loading" id="loadingMessage">
+                Cargando configuración...
+            </div>
+
+            <!-- Error message -->
+            <div class="error-message" id="errorMessage" style="display: none;">
+                Error al cargar la configuración. Intenta recargar la página.
+            </div>
+
             <!-- Anuncios Generales -->
             <div class="general-announcements" id="generalAnnouncements">
                 <!-- Los anuncios se cargan dinámicamente aquí -->
             </div>
 
-            <form id="priceCalculator">
+            <form id="priceCalculator" style="display: none;">
                 <div class="form-group">
                     <label for="brand">Marca</label>
                     <select id="brand" required>
-                        <option value="">Cargando marcas...</option>
+                        <option value="">Seleccionar marca...</option>
                     </select>
                 </div>
 
@@ -284,21 +305,64 @@
     </div>
 
     <script>
-        // Configuración de márgenes, alertas y anuncios (se carga dinámicamente)
+        // Configuración del Gist
+        const GIST_ID = '175dfae32c11cf82e3ebb92ffa5628da';
+        const GIST_URL = `https://gist.githubusercontent.com/marcosite08/${GIST_ID}/raw/materiales-config.json`;
+        
+        // Variables globales
         let brandMargins = {};
         let brandAlerts = {};
         let generalAnnouncements = [];
+        let configLoaded = false;
         
-        // Cargar configuración desde el panel admin
-        function loadConfiguration() {
-            const savedBrands = localStorage.getItem('calculatorBrands');
-            const savedAlerts = localStorage.getItem('brandAlerts');
-            const savedAnnouncements = localStorage.getItem('generalAnnouncements');
-            
-            if (savedBrands) {
-                brandMargins = JSON.parse(savedBrands);
-            } else {
-                // Configuración por defecto si no hay datos del admin
+        // Elementos del DOM
+        const loadingMessage = document.getElementById('loadingMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const priceCalculator = document.getElementById('priceCalculator');
+        const results = document.getElementById('results');
+        const brandSelect = document.getElementById('brand');
+        const publicPriceInput = document.getElementById('publicPrice');
+
+        // Cargar configuración desde GitHub Gist
+        async function loadConfigurationFromGist() {
+            try {
+                console.log('Loading configuration from Gist...');
+                const response = await fetch(GIST_URL + '?_=' + Date.now()); // Cache busting
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const config = await response.json();
+                console.log('Configuration loaded:', config);
+                
+                // Asignar configuración
+                brandMargins = config.brands || {};
+                brandAlerts = config.alerts || {};
+                generalAnnouncements = config.announcements || [];
+                
+                configLoaded = true;
+                
+                // Ocultar loading y mostrar formulario
+                loadingMessage.style.display = 'none';
+                errorMessage.style.display = 'none';
+                priceCalculator.style.display = 'block';
+                
+                // Renderizar interfaz
+                updateBrandSelect();
+                renderAnnouncements();
+                
+                console.log('Configuration loaded successfully');
+                
+            } catch (error) {
+                console.error('Error loading configuration:', error);
+                
+                // Mostrar error
+                loadingMessage.style.display = 'none';
+                errorMessage.style.display = 'block';
+                priceCalculator.style.display = 'none';
+                
+                // Usar configuración por defecto como fallback
                 brandMargins = {
                     'truper': 40,
                     'vitroblocks': 30,
@@ -307,34 +371,20 @@
                     'perdura': 50,
                     'royalty': 50
                 };
-                localStorage.setItem('calculatorBrands', JSON.stringify(brandMargins));
-            }
-            
-            if (savedAlerts) {
-                brandAlerts = JSON.parse(savedAlerts);
-            } else {
-                // Alertas por defecto
                 brandAlerts = {
                     'truper': '¡ATENCIÓN! No aplica para carretilla cód. 11740, usar marca "Alertas"'
                 };
-                localStorage.setItem('brandAlerts', JSON.stringify(brandAlerts));
-            }
-
-            if (savedAnnouncements) {
-                try {
-                    generalAnnouncements = JSON.parse(savedAnnouncements);
-                } catch (error) {
-                    console.error('Error parsing announcements:', error);
-                    generalAnnouncements = [];
-                }
-            } else {
-                // Sin anuncios por defecto
                 generalAnnouncements = [];
-                localStorage.setItem('generalAnnouncements', JSON.stringify(generalAnnouncements));
+                
+                // Mostrar formulario con datos por defecto después de un momento
+                setTimeout(() => {
+                    errorMessage.style.display = 'none';
+                    priceCalculator.style.display = 'block';
+                    updateBrandSelect();
+                    renderAnnouncements();
+                    configLoaded = true;
+                }, 3000);
             }
-            
-            updateBrandSelect();
-            renderAnnouncements();
         }
         
         // Renderizar anuncios generales
@@ -350,6 +400,7 @@
             
             // Verificar si hay anuncios
             if (!generalAnnouncements || generalAnnouncements.length === 0) {
+                console.log('No announcements to display');
                 return;
             }
             
@@ -357,6 +408,8 @@
             const activeAnnouncements = generalAnnouncements.filter(announcement => 
                 announcement && announcement.active === true
             );
+            
+            console.log('Active announcements:', activeAnnouncements);
             
             for (const announcement of activeAnnouncements) {
                 if (!announcement.title || !announcement.message) continue;
@@ -384,7 +437,6 @@
         
         // Actualizar el select de marcas dinámicamente
         function updateBrandSelect() {
-            const brandSelect = document.getElementById('brand');
             const currentValue = brandSelect.value;
             
             // Limpiar opciones existentes
@@ -424,14 +476,11 @@
                 brandAlert.classList.remove('show');
             }
         }
-        
-        // Variables globales
-        const results = document.getElementById('results');
-        const brandSelect = document.getElementById('brand');
-        const publicPriceInput = document.getElementById('publicPrice');
 
         // Calcular en tiempo real cuando cambie el precio o la marca
         function updateCalculation() {
+            if (!configLoaded) return;
+            
             const brand = brandSelect.value;
             const publicPrice = parseFloat(publicPriceInput.value);
             
@@ -479,41 +528,42 @@
             results.style.display = 'block';
         }
         
-        // Escuchar cambios en localStorage para actualizar automáticamente
-        window.addEventListener('storage', function(e) {
-            if (e.key === 'calculatorBrands' || e.key === 'brandAlerts' || e.key === 'generalAnnouncements') {
-                console.log('Storage changed, reloading configuration');
-                loadConfiguration();
-                updateCalculation(); // Recalcular si hay datos activos
-            }
-        });
-        
-        // También verificar cambios cada 3 segundos (para mismo tab)
-        setInterval(function() {
+        // Recargar configuración cada 30 segundos
+        setInterval(async () => {
+            console.log('Checking for configuration updates...');
             try {
-                const currentBrands = JSON.stringify(brandMargins);
-                const currentAlerts = JSON.stringify(brandAlerts);
-                const currentAnnouncements = JSON.stringify(generalAnnouncements);
-                const savedBrands = localStorage.getItem('calculatorBrands');
-                const savedAlerts = localStorage.getItem('brandAlerts');
-                const savedAnnouncements = localStorage.getItem('generalAnnouncements');
-                
-                if ((savedBrands && currentBrands !== savedBrands) || 
-                    (savedAlerts && currentAlerts !== savedAlerts) ||
-                    (savedAnnouncements && currentAnnouncements !== savedAnnouncements)) {
-                    console.log('Data changed, updating...');
-                    loadConfiguration();
-                    updateCalculation();
+                const response = await fetch(GIST_URL + '?_=' + Date.now());
+                if (response.ok) {
+                    const config = await response.json();
+                    
+                    // Verificar si hay cambios
+                    const currentConfig = JSON.stringify({
+                        brands: brandMargins,
+                        alerts: brandAlerts,
+                        announcements: generalAnnouncements
+                    });
+                    const newConfig = JSON.stringify(config);
+                    
+                    if (currentConfig !== newConfig) {
+                        console.log('Configuration updated, reloading...');
+                        brandMargins = config.brands || {};
+                        brandAlerts = config.alerts || {};
+                        generalAnnouncements = config.announcements || [];
+                        
+                        updateBrandSelect();
+                        renderAnnouncements();
+                        updateCalculation();
+                    }
                 }
             } catch (error) {
-                console.error('Error in periodic check:', error);
+                console.error('Error checking configuration updates:', error);
             }
-        }, 3000);
+        }, 30000); // Cada 30 segundos
         
         // Inicializar la aplicación
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, initializing calculator');
-            loadConfiguration();
+            console.log('DOM loaded, loading configuration...');
+            loadConfigurationFromGist();
         });
     </script>
 </body>
