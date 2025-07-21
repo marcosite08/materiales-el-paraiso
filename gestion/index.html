@@ -21,7 +21,7 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             padding-top: 30px;
         }
@@ -80,16 +80,22 @@
             font-size: 14px;
         }
 
-        input, select {
+        input, select, textarea {
             width: 100%;
             padding: 12px;
             border: 2px solid #e1e5e9;
             border-radius: 8px;
             font-size: 14px;
             transition: all 0.3s ease;
+            font-family: inherit;
         }
 
-        input:focus, select:focus {
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -142,26 +148,35 @@
             background: #138496;
         }
 
-        .brands-table {
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
+        .brands-table, .alerts-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
 
-        .brands-table th,
-        .brands-table td {
+        .brands-table th, .brands-table td,
+        .alerts-table th, .alerts-table td {
             padding: 12px;
             text-align: left;
             border-bottom: 1px solid #e1e5e9;
         }
 
-        .brands-table th {
+        .brands-table th, .alerts-table th {
             background: #f8f9fa;
             font-weight: 600;
             color: #333;
         }
 
-        .brands-table tr:hover {
+        .brands-table tr:hover, .alerts-table tr:hover {
             background: #f8f9fa;
         }
 
@@ -218,6 +233,17 @@
             text-decoration: underline;
         }
 
+        .alert-preview {
+            background: linear-gradient(45deg, #ff6b6b, #ffd93d);
+            border: 3px solid #ff4757;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            color: #2c2c2c;
+            font-weight: bold;
+            text-align: center;
+        }
+
         @media (max-width: 768px) {
             .form-row {
                 flex-direction: column;
@@ -239,7 +265,7 @@
         <div class="admin-panel">
             <div class="header">
                 <div class="logo">🔧 Panel de Administración</div>
-                <div class="subtitle">Materiales El Paraíso - Gestión de Marcas</div>
+                <div class="subtitle">Materiales El Paraíso - Gestión de Marcas y Alertas</div>
             </div>
 
             <div id="alertContainer"></div>
@@ -281,6 +307,49 @@
                     </thead>
                     <tbody id="brandsTableBody">
                         <!-- Datos dinámicos -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Nueva Sección: Gestión de Alertas -->
+            <div class="section">
+                <h3>⚠️ Gestión de Alertas por Marca</h3>
+                <p style="color: #666; margin-bottom: 20px; font-size: 14px;">
+                    Configura mensajes de alerta que aparecerán cuando los vendedores seleccionen ciertas marcas.
+                </p>
+                
+                <form id="alertForm">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="alertBrand">Marca</label>
+                            <select id="alertBrand" required>
+                                <option value="">Seleccionar marca...</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 3;">
+                            <label for="alertMessage">Mensaje de Alerta</label>
+                            <textarea id="alertMessage" placeholder="Ej: ¡ATENCIÓN! No aplica para varilla corrugada Deacero" required></textarea>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn btn-warning" style="width: 100%;">
+                                <span id="alertFormButtonText">Agregar Alerta</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="alertPreview"></div>
+                </form>
+
+                <table class="alerts-table">
+                    <thead>
+                        <tr>
+                            <th>Marca</th>
+                            <th>Mensaje de Alerta</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alertsTableBody">
+                        <!-- Alertas dinámicas -->
                     </tbody>
                 </table>
             </div>
@@ -330,14 +399,23 @@
             'royalty': 50
         };
 
+        const defaultAlerts = {
+            'truper': '¡ATENCIÓN! No aplica para carretilla cód. 11740, usar marca "Alertas"'
+        };
+
         let currentEditingBrand = null;
+        let currentEditingAlert = null;
         let brands = {};
+        let brandAlerts = {};
 
         // Inicializar la aplicación
         function initApp() {
             loadBrands();
+            loadAlerts();
             renderBrandsTable();
+            renderAlertsTable();
             updateCalculatorLink();
+            updateAlertBrandSelect();
         }
 
         // Actualizar enlace de calculadora
@@ -368,11 +446,63 @@
             }
         }
 
+        // Cargar alertas desde localStorage
+        function loadAlerts() {
+            const saved = localStorage.getItem('brandAlerts');
+            if (saved) {
+                brandAlerts = JSON.parse(saved);
+            } else {
+                brandAlerts = {...defaultAlerts};
+                saveAlerts();
+            }
+        }
+
         // Guardar marcas en localStorage
         function saveBrands() {
             localStorage.setItem('calculatorBrands', JSON.stringify(brands));
             localStorage.setItem('materialsBrands', JSON.stringify(brands));
         }
+
+        // Guardar alertas en localStorage
+        function saveAlerts() {
+            localStorage.setItem('brandAlerts', JSON.stringify(brandAlerts));
+        }
+
+        // Actualizar select de marcas para alertas
+        function updateAlertBrandSelect() {
+            const alertBrandSelect = document.getElementById('alertBrand');
+            const currentValue = alertBrandSelect.value;
+            
+            alertBrandSelect.innerHTML = '<option value="">Seleccionar marca...</option>';
+            
+            const sortedBrands = Object.keys(brands).sort();
+            for (const brandKey of sortedBrands) {
+                const option = document.createElement('option');
+                option.value = brandKey;
+                option.textContent = formatBrandName(brandKey);
+                alertBrandSelect.appendChild(option);
+            }
+            
+            if (currentValue && brands[currentValue]) {
+                alertBrandSelect.value = currentValue;
+            }
+        }
+
+        // Vista previa de alerta
+        document.getElementById('alertMessage').addEventListener('input', function() {
+            const message = this.value;
+            const previewContainer = document.getElementById('alertPreview');
+            
+            if (message.trim()) {
+                previewContainer.innerHTML = `
+                    <div class="alert-preview">
+                        ⚠️ ${message} ⚠️
+                    </div>
+                `;
+            } else {
+                previewContainer.innerHTML = '';
+            }
+        });
 
         // Renderizar tabla de marcas
         function renderBrandsTable() {
@@ -405,6 +535,38 @@
             }
         }
 
+        // Renderizar tabla de alertas
+        function renderAlertsTable() {
+            const tbody = document.getElementById('alertsTableBody');
+            tbody.innerHTML = '';
+
+            const sortedAlerts = Object.keys(brandAlerts).sort();
+            
+            for (const brandKey of sortedAlerts) {
+                const message = brandAlerts[brandKey];
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="font-weight: 600; text-transform: capitalize;">
+                        ${formatBrandName(brandKey)}
+                    </td>
+                    <td style="max-width: 300px; word-break: break-word;">
+                        ${message}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn btn-warning btn-small" onclick="editAlert('${brandKey}')">
+                                ✏️ Editar
+                            </button>
+                            <button class="btn btn-danger btn-small" onclick="deleteAlert('${brandKey}')">
+                                🗑️ Eliminar
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            }
+        }
+
         // Formatear nombre de marca
         function formatBrandName(brandKey) {
             return brandKey.replace(/([A-Z])/g, ' $1')
@@ -426,7 +588,7 @@
             }, 3000);
         }
 
-        // Manejar formulario
+        // Manejar formulario de marcas
         document.getElementById('brandForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -443,7 +605,6 @@
                                 .replace(/[^a-z0-9]/g, '');
             
             if (currentEditingBrand) {
-                // Editando marca existente
                 if (currentEditingBrand !== brandKey && brands[brandKey]) {
                     showAlert('Ya existe una marca con ese nombre', 'danger');
                     return;
@@ -451,6 +612,11 @@
                 
                 if (currentEditingBrand !== brandKey) {
                     delete brands[currentEditingBrand];
+                    // Actualizar alerta si existe
+                    if (brandAlerts[currentEditingBrand]) {
+                        brandAlerts[brandKey] = brandAlerts[currentEditingBrand];
+                        delete brandAlerts[currentEditingBrand];
+                    }
                 }
                 
                 brands[brandKey] = margin;
@@ -458,7 +624,6 @@
                 currentEditingBrand = null;
                 document.getElementById('formButtonText').textContent = 'Agregar Marca';
             } else {
-                // Agregando nueva marca
                 if (brands[brandKey]) {
                     showAlert('Ya existe una marca con ese nombre', 'danger');
                     return;
@@ -469,8 +634,38 @@
             }
             
             saveBrands();
+            saveAlerts();
             renderBrandsTable();
+            updateAlertBrandSelect();
             document.getElementById('brandForm').reset();
+        });
+
+        // Manejar formulario de alertas
+        document.getElementById('alertForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const brand = document.getElementById('alertBrand').value;
+            const message = document.getElementById('alertMessage').value.trim();
+            
+            if (!brand || !message) {
+                showAlert('Por favor complete todos los campos de la alerta', 'danger');
+                return;
+            }
+            
+            if (currentEditingAlert) {
+                brandAlerts[brand] = message;
+                showAlert('Alerta actualizada correctamente');
+                currentEditingAlert = null;
+                document.getElementById('alertFormButtonText').textContent = 'Agregar Alerta';
+            } else {
+                brandAlerts[brand] = message;
+                showAlert('Alerta agregada correctamente');
+            }
+            
+            saveAlerts();
+            renderAlertsTable();
+            document.getElementById('alertForm').reset();
+            document.getElementById('alertPreview').innerHTML = '';
         });
 
         // Editar marca
@@ -483,15 +678,39 @@
             showAlert('Editando marca: ' + formatBrandName(brandKey), 'success');
         }
 
+        // Editar alerta
+        function editAlert(brandKey) {
+            currentEditingAlert = brandKey;
+            document.getElementById('alertBrand').value = brandKey;
+            document.getElementById('alertMessage').value = brandAlerts[brandKey];
+            document.getElementById('alertFormButtonText').textContent = 'Actualizar Alerta';
+            
+            // Mostrar preview
+            document.getElementById('alertPreview').innerHTML = `
+                <div class="alert-preview">
+                    ⚠️ ${brandAlerts[brandKey]} ⚠️
+                </div>
+            `;
+            
+            showAlert('Editando alerta para: ' + formatBrandName(brandKey), 'success');
+        }
+
         // Eliminar marca
         function deleteBrand(brandKey) {
             if (confirm(`¿Estás seguro de eliminar la marca "${formatBrandName(brandKey)}"?`)) {
                 delete brands[brandKey];
+                // También eliminar alerta si existe
+                if (brandAlerts[brandKey]) {
+                    delete brandAlerts[brandKey];
+                }
+                
                 saveBrands();
+                saveAlerts();
                 renderBrandsTable();
+                renderAlertsTable();
+                updateAlertBrandSelect();
                 showAlert('Marca eliminada correctamente');
                 
-                // Cancelar edición si se está editando esta marca
                 if (currentEditingBrand === brandKey) {
                     currentEditingBrand = null;
                     document.getElementById('formButtonText').textContent = 'Agregar Marca';
@@ -500,15 +719,36 @@
             }
         }
 
+        // Eliminar alerta
+        function deleteAlert(brandKey) {
+            if (confirm(`¿Estás seguro de eliminar la alerta para "${formatBrandName(brandKey)}"?`)) {
+                delete brandAlerts[brandKey];
+                saveAlerts();
+                renderAlertsTable();
+                showAlert('Alerta eliminada correctamente');
+                
+                if (currentEditingAlert === brandKey) {
+                    currentEditingAlert = null;
+                    document.getElementById('alertFormButtonText').textContent = 'Agregar Alerta';
+                    document.getElementById('alertForm').reset();
+                    document.getElementById('alertPreview').innerHTML = '';
+                }
+            }
+        }
+
         // Exportar datos
         function exportData() {
-            const dataStr = JSON.stringify(brands, null, 2);
+            const data = {
+                brands: brands,
+                alerts: brandAlerts
+            };
+            const dataStr = JSON.stringify(data, null, 2);
             const dataBlob = new Blob([dataStr], {type: 'application/json'});
             const url = URL.createObjectURL(dataBlob);
             
             const link = document.createElement('a');
             link.href = url;
-            link.download = `materiales_marcas_backup_${new Date().toISOString().split('T')[0]}.json`;
+            link.download = `materiales_completo_backup_${new Date().toISOString().split('T')[0]}.json`;
             link.click();
             
             URL.revokeObjectURL(url);
@@ -523,21 +763,17 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const importedBrands = JSON.parse(e.target.result);
-                    if (typeof importedBrands === 'object' && importedBrands !== null) {
-                        // Validar que todos los valores sean números
-                        const isValid = Object.values(importedBrands).every(value => 
-                            typeof value === 'number' && value >= 0 && value <= 100
-                        );
-                        
-                        if (isValid) {
-                            brands = importedBrands;
-                            saveBrands();
-                            renderBrandsTable();
-                            showAlert('Datos importados correctamente');
-                        } else {
-                            showAlert('El archivo contiene datos inválidos', 'danger');
-                        }
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    if (importedData.brands && importedData.alerts) {
+                        brands = importedData.brands;
+                        brandAlerts = importedData.alerts;
+                        saveBrands();
+                        saveAlerts();
+                        renderBrandsTable();
+                        renderAlertsTable();
+                        updateAlertBrandSelect();
+                        showAlert('Datos importados correctamente');
                     } else {
                         showAlert('Formato de archivo inválido', 'danger');
                     }
@@ -547,7 +783,6 @@
             };
             reader.readAsText(file);
             
-            // Limpiar input
             event.target.value = '';
         }
 
@@ -555,14 +790,21 @@
         function resetData() {
             if (confirm('¿Estás seguro de restaurar los datos originales? Se perderán todos los cambios.')) {
                 brands = {...defaultBrands};
+                brandAlerts = {...defaultAlerts};
                 saveBrands();
+                saveAlerts();
                 renderBrandsTable();
+                renderAlertsTable();
+                updateAlertBrandSelect();
                 showAlert('Datos restaurados a configuración original');
                 
-                // Cancelar cualquier edición
                 currentEditingBrand = null;
+                currentEditingAlert = null;
                 document.getElementById('formButtonText').textContent = 'Agregar Marca';
+                document.getElementById('alertFormButtonText').textContent = 'Agregar Alerta';
                 document.getElementById('brandForm').reset();
+                document.getElementById('alertForm').reset();
+                document.getElementById('alertPreview').innerHTML = '';
             }
         }
 
